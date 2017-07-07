@@ -1,0 +1,11 @@
+<resources>
+    <style name="Downloader_StyleProgressBarMini" parent="Widget.AppCompat.ProgressBar.Horizontal">
+        <item name="android:maxHeight">50dip</item>
+        <item name="android:minHeight">10dip</item>
+        <item name="android:indeterminateOnly">false</item>
+        <item name="android:indeterminateDrawable">
+            @android:drawable/progress_indeterminate_horizontal
+        </item>
+        <item name="android:progressDrawable">@drawable/com_cheng_shi_downloader_shape_progressbar_mini</item>
+    </style>
+</resources>

@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">AkpUpdater</string>
+    <string name="downloader_default_percentage">0 %</string>
+    <string name="downloader_icon">icon</string>
+</resources>
