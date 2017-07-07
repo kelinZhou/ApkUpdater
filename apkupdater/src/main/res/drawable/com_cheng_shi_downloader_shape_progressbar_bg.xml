@@ -4,7 +4,6 @@
     <!--边框填充的颜色-->
     <solid android:color="#cecece"/>
     <!--设置进度条的四个角为弧形-->
-    <!--android:radius 弧形的半径-->
     <corners android:radius="90dp"/>
     <!--padding：边界的间隔-->
     <padding android:bottom="1dp"
