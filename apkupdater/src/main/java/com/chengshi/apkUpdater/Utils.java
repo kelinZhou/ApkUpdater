@@ -1,4 +1,4 @@
-package com.chengshi.apkUpdater.util;
+package com.chengshi.apkUpdater;
 
 import android.app.Activity;
 import android.content.Context;
@@ -8,8 +8,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.support.annotation.NonNull;
-
-import com.chengshi.apkUpdater.Updater;
 
 import java.io.File;
 
@@ -37,7 +35,7 @@ public class Utils {
      * @param context 需要一个上下文。
      * @return 返回当前的版本号。
      */
-    public static int getCurrentVersionCode(Context context) {
+    static int getCurrentVersionCode(Context context) {
         PackageManager packageManager = context.getPackageManager();
         PackageInfo packageInfo = null;
         try {
@@ -72,7 +70,7 @@ public class Utils {
      * @param apkPath 安装包的路径
      * @param requestCode 安装APK的请求码。
      */
-    public static void installApk(Activity context, Uri apkPath, int requestCode) {
+    static void installApk(Activity context, Uri apkPath, int requestCode) {
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_VIEW);
         intent.addCategory("android.intent.category.DEFAULT");
@@ -84,29 +82,31 @@ public class Utils {
     /**
      * 删除上次更新存储在本地的apk
      */
-    public static void removeOldApk(@NonNull Context context) {
+    static void removeOldApk(@NonNull Context context) {
         //获取老ＡＰＫ的存储路径
         File apkFile = new File(getApkPathFromSp(context));
 
         if (apkFile.exists() && apkFile.isFile()) {
-            boolean delete = apkFile.delete();
+            if (apkFile.delete()) {
+                getEdit(context).remove(SP_KEY_DOWNLOAD_APK_PATH);
+                getEdit(context).remove(SP_KEY_DOWNLOAD_APK_VERSION_CODE);
+            }
         }
     }
 
-
-    public static void putApkPath2Sp(Context context, String value) {
+    static void putApkPath2Sp(Context context, String value) {
         getEdit(context).putString(SP_KEY_DOWNLOAD_APK_PATH, value).commit();
     }
 
-    public static String getApkPathFromSp(Context context) {
+    static String getApkPathFromSp(Context context) {
         return context.getSharedPreferences(CONFIG_NAME, Context.MODE_PRIVATE).getString(SP_KEY_DOWNLOAD_APK_PATH, "");
     }
 
-    public static void putApkVersionCode2Sp(Context context, int value) {
+    static void putApkVersionCode2Sp(Context context, int value) {
         getEdit(context).putInt(SP_KEY_DOWNLOAD_APK_VERSION_CODE, value).commit();
     }
 
-    public static int getApkVersionCodeFromSp(Context context) {
+    static int getApkVersionCodeFromSp(Context context) {
         return context.getSharedPreferences(CONFIG_NAME, Context.MODE_PRIVATE).getInt(SP_KEY_DOWNLOAD_APK_VERSION_CODE, -1);
     }
 

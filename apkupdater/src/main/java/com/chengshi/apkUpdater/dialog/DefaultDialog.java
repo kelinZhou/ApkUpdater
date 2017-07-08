@@ -73,7 +73,7 @@ public class DefaultDialog {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         boolean isSure = which == DialogInterface.BUTTON_POSITIVE;
-                        listener.onDialogDismiss(isSure, false);
+                        listener.onDialogDismiss(isSure);
                     }
                 };
 
@@ -82,7 +82,7 @@ public class DefaultDialog {
                     public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
                         if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
                             mDialog.dismiss();
-                            listener.onDialogDismiss(false, false);
+                            listener.onDialogDismiss(false);
                         }
                         return false;
                     }

@@ -9,7 +9,6 @@ import android.net.Uri;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
-
 import com.chengshi.apkUpdater.callback.DialogListener;
 import com.chengshi.apkUpdater.callback.OnProgressListener;
 import com.chengshi.apkUpdater.callback.ServiceUnBindListener;
@@ -17,9 +16,6 @@ import com.chengshi.apkUpdater.callback.UpdateCallback;
 import com.chengshi.apkUpdater.dialog.DefaultDialog;
 import com.chengshi.apkUpdater.dialog.DownloadDialogConfig;
 import com.chengshi.apkUpdater.dialog.InformDialogConfig;
-import com.chengshi.apkUpdater.service.DownloadService;
-import com.chengshi.apkUpdater.util.Utils;
-
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -42,9 +38,11 @@ public final class Updater {
     private ServiceConnection conn;
     private boolean isForceUpdate;
     private Intent mServiceIntent;
-    private DefaultDialog mInformDialog;
+    private DefaultDialog mProgressDialog;
     private int mLatestVersionCode;
     private boolean mIsLoaded;
+    private UpdateInfo mUpdateInfo;
+    private boolean mHaveNewVersion;
 
     /**
      * 私有构造函数，防止其他类创建本类对象。
@@ -52,71 +50,97 @@ public final class Updater {
     private Updater(Builder builder) {
         mBuilder = builder;
         mCallback = mBuilder.callback;
-        conn = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
-                DownloadService.DownloadBinder binder = (DownloadService.DownloadBinder) service;
-                DownloadService downloadService = binder.getService();
+    }
 
-                //接口回调，下载进度
-                downloadService.setOnProgressListener(new OnProgressListener() {
+    @NonNull
+    private ServiceConnection getServiceConnection() {
+        if (conn == null) {
+            conn = new ServiceConnection() {
+                @Override
+                public void onServiceConnected(ComponentName name, IBinder service) {
+                    DownloadService.DownloadBinder binder = (DownloadService.DownloadBinder) service;
+                    DownloadService downloadService = binder.getService();
 
-                    @Override
-                    public void onStartLoad() {
-                        mCallback.onStartLoad();
-                        mBuilder.loadDialogConfig.setForceUpdate(isForceUpdate);
-                        mInformDialog = new DefaultDialog(mBuilder.context, mBuilder.loadDialogConfig);
-                        mInformDialog.show();
-                    }
+                    //接口回调，下载进度
+                    downloadService.setOnProgressListener(new OnProgressListener() {
 
-                    @Override
-                    public void onProgress(long total, long current, int percentage) {
-                        if (percentage == 100 || total == current) {
-                            Utils.putApkVersionCode2Sp(mBuilder.context, mLatestVersionCode);
+                        @Override
+                        public void onStartLoad() {
+                            mCallback.onStartLoad();
+                            if (!mBuilder.noDialog) {
+                                mBuilder.loadDialogConfig.setForceUpdate(isForceUpdate);
+                                showProgressDialog();
+                            }
                         }
-                        mCallback.onProgress(total, current, percentage);
-                        if (mInformDialog != null) {
-                            mInformDialog.updateDownLoadsProgress(percentage);
+
+                        @Override
+                        public void onProgress(long total, long current, int percentage) {
+                            if (percentage == 100 || total == current) {
+                                Utils.putApkVersionCode2Sp(mBuilder.context, mLatestVersionCode);
+                            }
+                            mCallback.onProgress(total, current, percentage);
+                            if (!mBuilder.noDialog) {
+                                updateProgressDialog(percentage);
+                            }
                         }
-                    }
 
-                    @Override
-                    public void onLoadSuccess(Uri downIdUri) {
-                        Utils.installApk(mBuilder.context, downIdUri, Updater.REQUEST_CODE_INSTALL_APK);
-                        stopService();  //结束服务
-                        mCallback.onLoadSuccess(downIdUri);
-                        mCallback.onCompleted(true);
-                    }
+                        @Override
+                        public void onLoadSuccess(Uri downIdUri) {
+                            Utils.installApk(mBuilder.context, downIdUri, Updater.REQUEST_CODE_INSTALL_APK);
+                            stopService();  //结束服务
+                            mCallback.onLoadSuccess(downIdUri);
+                            mCallback.onCompleted(true);
+                        }
 
-                    @Override
-                    public void onLoadFailed() {
-                        stopService();  //结束服务
-                        mCallback.onLoadFailed();
-                        mCallback.onCompleted(true);
-                    }
+                        @Override
+                        public void onLoadFailed() {
+                            stopService();  //结束服务
+                            mCallback.onLoadFailed();
+                            mCallback.onCompleted(true);
+                        }
 
-                    @Override
-                    public void onLoadPaused() {
-                        mCallback.onLoadPaused();
-                    }
+                        @Override
+                        public void onLoadPaused() {
+                            mCallback.onLoadPaused();
+                        }
 
-                    @Override
-                    public void onLoadPending() {
-                        mCallback.onLoadPending();
-                    }
-                });
+                        @Override
+                        public void onLoadPending() {
+                            mCallback.onLoadPending();
+                        }
+                    });
 
-                downloadService.setServiceUnBindListener(new ServiceUnBindListener() {
-                    @Override
-                    public void onUnBind() {
-                        isBindService = false;
-                    }
-                });
-            }
+                    downloadService.setServiceUnBindListener(new ServiceUnBindListener() {
+                        @Override
+                        public void onUnBind() {
+                            isBindService = false;
+                        }
+                    });
+                }
 
-            @Override
-            public void onServiceDisconnected(ComponentName name) {}
-        };
+                @Override
+                public void onServiceDisconnected(ComponentName name) {}
+            };
+        }
+        return conn;
+    }
+
+    /**
+     * 显示进度条对话框。
+     */
+    private void showProgressDialog() {
+        mProgressDialog = new DefaultDialog(mBuilder.context, mBuilder.loadDialogConfig);
+        mProgressDialog.show();
+    }
+
+    /**
+     * 更新进度条对话框进度。
+     * @param percentage 当前的百分比。
+     */
+    private void updateProgressDialog(int percentage) {
+        if (mProgressDialog != null) {
+            mProgressDialog.updateDownLoadsProgress(percentage);
+        }
     }
 
     private void stopService() {
@@ -129,59 +153,74 @@ public final class Updater {
     }
 
     public void check(UpdateInfo updateInfo) {
-        int latestVersionCode = Utils.getApkVersionCodeFromSp(mBuilder.context);
-        //如果这个条件满足说明上一次没有安装。有因为即使上一次没有安装最新的版本也有可能超出了上一次下载的版本，所以要在这里判断。
-        if (latestVersionCode == updateInfo.getVersionCode() && new File(Utils.getApkPathFromSp(mBuilder.context)).exists()) {
-            mIsLoaded = true;
-        } else {
-            Utils.removeOldApk(mBuilder.context);
-        }
-        if (updateInfo.getVersionCode() > Utils.getCurrentVersionCode(mBuilder.context)) {
-            isForceUpdate = updateInfo.isForceUpdate();
-            mLatestVersionCode = updateInfo.getVersionCode();
-            String fileName = updateInfo.getApkName();
-            if (!TextUtils.isEmpty(fileName)) {
-                mBuilder.fileName = fileName;
+        if (updateInfo != null && mUpdateInfo != updateInfo) {
+            mUpdateInfo = updateInfo;
+            mBuilder.informDialogConfig.setMsg(updateInfo.getUpdateMessage());
+            int latestVersionCode = Utils.getApkVersionCodeFromSp(mBuilder.context);
+            //如果这个条件满足说明上一次没有安装。有因为即使上一次没有安装最新的版本也有可能超出了上一次下载的版本，所以要在这里判断。
+            if (latestVersionCode == updateInfo.getVersionCode() && new File(Utils.getApkPathFromSp(mBuilder.context)).exists()) {
+                mIsLoaded = true;
             } else {
-                mBuilder.fileName = getDefaultApkName();
+                Utils.removeOldApk(mBuilder.context);
             }
-            showUpdateInform(updateInfo.getDownLoadsUrl(), updateInfo.getUpdateMessage());
-        } else {
-            mCallback.onCompleted(false);
+            if (updateInfo.getVersionCode() > Utils.getCurrentVersionCode(mBuilder.context)) {
+                mHaveNewVersion = true;
+                if (!mBuilder.noDialog) {
+                    showUpdateInform();
+                } else {
+                    mCallback.onShowCheckHintDialog();
+                }
+            } else {
+                mCallback.onCompleted(false);
+            }
         }
     }
 
     /**
      * 显示更新提醒。
      */
-    private void showUpdateInform(final String downLoadUrl, CharSequence updateMessage) {
-        InformDialogConfig dialogNormalConfig = mBuilder.informDialogConfig;
-        dialogNormalConfig.setMsg(updateMessage);
-        new DefaultDialog(mBuilder.context, dialogNormalConfig)
+    private void showUpdateInform() {
+        new DefaultDialog(mBuilder.context, mBuilder.informDialogConfig)
                 .show(new DialogListener() {
                     @Override
-                    public void onDialogDismiss(boolean isSure, boolean isUpdate) {
-                        if (isSure) {
-                            if (mIsLoaded) {
-                                File file = new File(Utils.getApkPathFromSp(mBuilder.context));
-                                Uri apkPath = Uri.fromFile(file);
-                                Utils.installApk(mBuilder.context, apkPath, Updater.REQUEST_CODE_INSTALL_APK);
-                            } else {
-                                mServiceIntent = new Intent(mBuilder.context, DownloadService.class);
-                                mServiceIntent.putExtra(DownloadService.KEY_APK_NAME, mBuilder.fileName);
-                                mServiceIntent.putExtra(DownloadService.KEY_DOWNLOAD_URL, downLoadUrl);
-                                mServiceIntent.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate);
-                                mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_TITLE, mBuilder.mTitle);
-                                mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_DESCRIPTION, mBuilder.mDescription);
-
-                                mBuilder.context.startService(mServiceIntent);
-                                isBindService = mBuilder.context.bindService(mServiceIntent, conn, Context.BIND_AUTO_CREATE);
-                            }
-                        } else {
-                            mCallback.onLoadCancelled(isForceUpdate);
-                        }
+                    public void onDialogDismiss(boolean isSure) {
+                        setCheckHandlerResult(isSure);
                     }
                 });
+    }
+
+    /**
+     * 设置检查更新的对话框的操作结果。
+     * @param isContinue 是否继续，如果继续则说明统一更新，否则就是不统一更新。
+     */
+    public void setCheckHandlerResult(boolean isContinue) {
+        if (isContinue && mHaveNewVersion) {
+            if (mIsLoaded) {
+                File file = new File(Utils.getApkPathFromSp(mBuilder.context));
+                Uri apkPath = Uri.fromFile(file);
+                Utils.installApk(mBuilder.context, apkPath, Updater.REQUEST_CODE_INSTALL_APK);
+            } else {
+                isForceUpdate = mUpdateInfo.isForceUpdate();
+                mLatestVersionCode = mUpdateInfo.getVersionCode();
+                String fileName = mUpdateInfo.getApkName();
+                if (!TextUtils.isEmpty(fileName)) {
+                    mBuilder.fileName = fileName;
+                } else {
+                    mBuilder.fileName = getDefaultApkName();
+                }
+                mServiceIntent = new Intent(mBuilder.context, DownloadService.class);
+                mServiceIntent.putExtra(DownloadService.KEY_APK_NAME, mBuilder.fileName);
+                mServiceIntent.putExtra(DownloadService.KEY_DOWNLOAD_URL, mUpdateInfo.getDownLoadsUrl());
+                mServiceIntent.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate);
+                mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_TITLE, mBuilder.mTitle);
+                mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_DESCRIPTION, mBuilder.mDescription);
+
+                mBuilder.context.startService(mServiceIntent);
+                isBindService = mBuilder.context.bindService(mServiceIntent, getServiceConnection(), Context.BIND_AUTO_CREATE);
+            }
+        } else {
+            mCallback.onLoadCancelled(isForceUpdate);
+        }
     }
 
     /**
@@ -215,6 +254,10 @@ public final class Updater {
          * APK名称。
          */
         String fileName;
+        /**
+         * 是否没有对话框。
+         */
+        private boolean noDialog;
 
         public Builder(@NonNull Activity context) {
             this.context = context;
@@ -275,7 +318,7 @@ public final class Updater {
         /**
          * 设置通知栏的标题。
          */
-        Builder setNotifyTitle(CharSequence title) {
+        public Builder setNotifyTitle(CharSequence title) {
             this.mTitle = title;
             return this;
         }
@@ -285,6 +328,16 @@ public final class Updater {
          */
         public Builder setNotifyDescription(CharSequence description) {
             this.mDescription = description;
+            return this;
+        }
+
+        /**
+         * 如果你希望自己创建对话框，而不适用默认提供的对话框，可以调用该方法将默认的对话框关闭。
+         * 如果你关闭了默认的对话框的话就必须自己实现UI交互，并且在用户更新提示做出反应的时候调用
+         * {@link #setCheckHandlerResult(boolean)} 方法。
+         */
+        public Builder setNoDialog() {
+            this.noDialog = true;
             return this;
         }
 

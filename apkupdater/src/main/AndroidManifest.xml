@@ -5,7 +5,7 @@
                  android:label="@string/app_name"
                  android:supportsRtl="true">
         <!--版本更新服务-->
-        <service android:name="com.chengshi.apkUpdater.service.DownloadService"/>
+        <service android:name="com.chengshi.apkUpdater.DownloadService"/>
     </application>
 
 </manifest>

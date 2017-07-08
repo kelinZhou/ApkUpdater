@@ -2,6 +2,8 @@ package com.chengshi.apkUpdater.callback;
 
 import android.net.Uri;
 
+import com.chengshi.apkUpdater.Updater;
+
 /**
  * 描述 下载文件的回调接口。
  * 创建人 kelin
@@ -12,7 +14,8 @@ import android.net.Uri;
 public abstract class UpdateCallback implements OnProgressListener {
 
     /**
-     * 开始下载。
+     * 开始下载，在开始执行下载的时候调用。如果你在构建 {@link Updater.Builder} 的时候调用了
+     * {@link Updater.Builder#setNoDialog()} 方法关闭了默认对话框的话，那么你需要在这做显示下载进度操作。
      */
     @Override
     public void onStartLoad() {}
@@ -70,4 +73,11 @@ public abstract class UpdateCallback implements OnProgressListener {
      *                       <code color="blue">false</code>则表示没有新的版本。
      */
     public void onCompleted(boolean haveNewVersion) {}
+
+    /**
+     * 当需要显示检查更新提示对话框的时候调用。你需要在这里进行检查更新提示对话框的显示。
+     * 这个方法并不一定会调用，如果你在构建 {@link Updater.Builder} 的时候调用了
+     * {@link Updater.Builder#setNoDialog()} 方法关闭了默认对话框的话，那么这个方法一定会执行，否则就不会执行。
+     */
+    public void onShowCheckHintDialog(){}
 }

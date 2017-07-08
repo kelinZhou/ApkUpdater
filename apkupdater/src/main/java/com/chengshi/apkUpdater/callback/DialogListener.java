@@ -14,8 +14,6 @@ public abstract class DialogListener {
      *
      * @param isSure 是否是通过点击确认按钮后销毁的。<code color="blue">true</code>表示是,
      *                 <code color="blue">false</code>则表示不是。
-     * @param isProgressDialog 当前的对话框是否是带有进度条的对话框。<code color="blue">true</code> 表示是带有进度条的,
-     *                 <code color="blue">false</code> 表示是没有进度条的。
      */
-    public abstract void onDialogDismiss(boolean isSure, boolean isProgressDialog);
+    public abstract void onDialogDismiss(boolean isSure);
 }

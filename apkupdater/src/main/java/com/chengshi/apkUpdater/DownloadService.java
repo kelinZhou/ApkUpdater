@@ -1,4 +1,4 @@
-package com.chengshi.apkUpdater.service;
+package com.chengshi.apkUpdater;
 
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
@@ -17,7 +17,7 @@ import android.os.IBinder;
 import android.os.Message;
 import com.chengshi.apkUpdater.callback.OnProgressListener;
 import com.chengshi.apkUpdater.callback.ServiceUnBindListener;
-import com.chengshi.apkUpdater.util.Utils;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -29,8 +29,7 @@ import java.util.concurrent.TimeUnit;
  * 版本 v 1.0.0
  */
 
-public class DownloadService extends Service {
-    private static final String TAG = "DownloadService";
+class DownloadService extends Service {
 
     /**
      * 表示当前的消息类型为更新进度。
@@ -229,7 +228,7 @@ public class DownloadService extends Service {
     }
 
     @SuppressLint("HandlerLeak")
-    public Handler getHandler() {
+    private Handler getHandler() {
         if (downLoadHandler != null) return downLoadHandler;
         return new Handler() {
             @Override
@@ -328,13 +327,13 @@ public class DownloadService extends Service {
         }
     }
 
-    public class DownloadBinder extends Binder {
+    class DownloadBinder extends Binder {
         /**
          * 返回当前服务的实例
          *
          * @return 返回 {@link DownloadService} 对象。
          */
-        public DownloadService getService() {
+        DownloadService getService() {
             return DownloadService.this;
         }
 
@@ -344,7 +343,7 @@ public class DownloadService extends Service {
      * 设置进度更新监听。
      * @param onProgressListener {@link OnProgressListener} 的实现类对象。
      */
-    public void setOnProgressListener(OnProgressListener onProgressListener) {
+    void setOnProgressListener(OnProgressListener onProgressListener) {
         this.onProgressListener = onProgressListener;
     }
 
@@ -352,7 +351,7 @@ public class DownloadService extends Service {
      * 设置进度更新监听。
      * @param serviceUnBindListener {@link ServiceUnBindListener} 的实现类对象。
      */
-    public void setServiceUnBindListener(ServiceUnBindListener serviceUnBindListener) {
+    void setServiceUnBindListener(ServiceUnBindListener serviceUnBindListener) {
         this.serviceUnBindListener = serviceUnBindListener;
     }
 
