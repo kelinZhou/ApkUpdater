@@ -57,7 +57,7 @@ public abstract class UpdateCallback implements OnProgressListener {
     public void onLoadPending() {}
 
     /**
-     * 当下载被取消后调用。这个取消有可能是人为取消,也有可能是意外取消。
+     * 当下载被取消后调用。即表明用户不想进行本次更新。
      *
      * @param isForceUpdate 当前是否为强制更新。
      */

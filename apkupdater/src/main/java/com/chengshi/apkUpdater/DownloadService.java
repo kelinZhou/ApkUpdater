@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * 版本 v 1.0.0
  */
 
-class DownloadService extends Service {
+public class DownloadService extends Service {
 
     /**
      * 表示当前的消息类型为更新进度。

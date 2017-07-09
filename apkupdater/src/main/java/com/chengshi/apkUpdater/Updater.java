@@ -166,7 +166,7 @@ public final class Updater {
             if (updateInfo.getVersionCode() > Utils.getCurrentVersionCode(mBuilder.context)) {
                 mHaveNewVersion = true;
                 if (!mBuilder.noDialog) {
-                    showUpdateInform();
+                    showUpdateInformDialog();
                 } else {
                     mCallback.onShowCheckHintDialog();
                 }
@@ -179,7 +179,7 @@ public final class Updater {
     /**
      * 显示更新提醒。
      */
-    private void showUpdateInform() {
+    private void showUpdateInformDialog() {
         new DefaultDialog(mBuilder.context, mBuilder.informDialogConfig)
                 .show(new DialogListener() {
                     @Override
@@ -208,19 +208,31 @@ public final class Updater {
                 } else {
                     mBuilder.fileName = getDefaultApkName();
                 }
-                mServiceIntent = new Intent(mBuilder.context, DownloadService.class);
-                mServiceIntent.putExtra(DownloadService.KEY_APK_NAME, mBuilder.fileName);
-                mServiceIntent.putExtra(DownloadService.KEY_DOWNLOAD_URL, mUpdateInfo.getDownLoadsUrl());
-                mServiceIntent.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate);
-                mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_TITLE, mBuilder.mTitle);
-                mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_DESCRIPTION, mBuilder.mDescription);
-
-                mBuilder.context.startService(mServiceIntent);
-                isBindService = mBuilder.context.bindService(mServiceIntent, getServiceConnection(), Context.BIND_AUTO_CREATE);
+                startDownload(mBuilder.fileName, mUpdateInfo.getDownLoadsUrl(), isForceUpdate, mBuilder.mTitle, mBuilder.mDescription);
             }
         } else {
             mCallback.onLoadCancelled(isForceUpdate);
         }
+    }
+
+    /**
+     * 开始下载。
+     * @param apkName apk名称。
+     * @param downLoadsUrl 下载地址。
+     * @param isForceUpdate 是否强制更新。
+     * @param notifyCationTitle 下载过程中通知栏的标题。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
+     * @param notifyCationDesc 下载过程中通知栏的描述。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
+     */
+    private void startDownload(@NonNull String apkName, @NonNull String downLoadsUrl, boolean isForceUpdate, CharSequence notifyCationTitle, CharSequence notifyCationDesc) {
+        mServiceIntent = new Intent(mBuilder.context, DownloadService.class);
+        mServiceIntent.putExtra(DownloadService.KEY_APK_NAME, apkName);
+        mServiceIntent.putExtra(DownloadService.KEY_DOWNLOAD_URL, downLoadsUrl);
+        mServiceIntent.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate);
+        mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_TITLE, notifyCationTitle);
+        mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_DESCRIPTION, notifyCationDesc);
+
+        mBuilder.context.startService(mServiceIntent);
+        isBindService = mBuilder.context.bindService(mServiceIntent, getServiceConnection(), Context.BIND_AUTO_CREATE);
     }
 
     /**
@@ -236,8 +248,8 @@ public final class Updater {
     public static class Builder {
 
         private final Activity context;
-        private final InformDialogConfig informDialogConfig = new InformDialogConfig();
-        private final DownloadDialogConfig loadDialogConfig = new DownloadDialogConfig();
+        private InformDialogConfig informDialogConfig = new InformDialogConfig();
+        private DownloadDialogConfig loadDialogConfig = new DownloadDialogConfig();
         /**
          * 用来配置下载的监听回调对象。
          */

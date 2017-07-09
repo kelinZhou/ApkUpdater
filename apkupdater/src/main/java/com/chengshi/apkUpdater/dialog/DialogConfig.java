@@ -15,7 +15,21 @@ abstract class DialogConfig {
     @DrawableRes
     protected int icon;
     protected CharSequence title;
-    protected CharSequence msg;
+    CharSequence msg;
+
+    private boolean isForceUpdate;
+
+    public void setForceUpdate(boolean forceUpdate) {
+        isForceUpdate = forceUpdate;
+    }
+
+    /**
+     * 是否强制更新。
+     * @return true表示强制更新，false则不是。
+     */
+    boolean isForceUpdate() {
+        return isForceUpdate;
+    }
 
     public void setIcon(int icon) {
         this.icon = icon;

@@ -58,7 +58,7 @@ public class DefaultDialog {
             mProgressBar = (ProgressBar) contentView.findViewById(R.id.progress);
             mPercentageView = (TextView) contentView.findViewById(R.id.tv_percentage);
             builder.setView(contentView);
-            if (!((DownloadDialogConfig) mConfig).isForceUpdate()) {
+            if (!mConfig.isForceUpdate()) {
                 builder.setPositiveButton("悄悄的下载", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -88,8 +88,10 @@ public class DefaultDialog {
                     }
                 });
             }
-            builder.setPositiveButton("确定", onClickListener)  //设置确定按钮
-                    .setNegativeButton("取消", onClickListener); //设置取消按钮
+            builder.setPositiveButton("确定", onClickListener);  //设置确定按钮
+            if (!mConfig.isForceUpdate()) {
+                builder.setNegativeButton("取消", onClickListener); //如果不是强制更新则设置取消按钮
+            }
         }
 
         builder.setIcon(mConfig.getIcon()) //设置图标

@@ -76,7 +76,7 @@ public class Utils {
         intent.addCategory("android.intent.category.DEFAULT");
         intent.setDataAndType(apkPath, "application/vnd.android.package-archive");
         context.startActivityForResult(intent, requestCode);
-        android.os.Process.killProcess(android.os.Process.myPid());
+//        android.os.Process.killProcess(android.os.Process.myPid());
     }
 
     /**
