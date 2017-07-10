@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
+
 import com.chengshi.apkUpdater.callback.DialogListener;
 import com.chengshi.apkUpdater.callback.OnProgressListener;
 import com.chengshi.apkUpdater.callback.ServiceUnBindListener;
@@ -16,6 +17,7 @@ import com.chengshi.apkUpdater.callback.UpdateCallback;
 import com.chengshi.apkUpdater.dialog.DefaultDialog;
 import com.chengshi.apkUpdater.dialog.DownloadDialogConfig;
 import com.chengshi.apkUpdater.dialog.InformDialogConfig;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -27,11 +29,6 @@ import java.util.Date;
  * 版本 v 1.0.0
  */
 public final class Updater {
-
-    /**
-     * 安装APK的请求码。
-     */
-    public static final int REQUEST_CODE_INSTALL_APK = 0X0000_0010;
     private final Builder mBuilder;
     private final UpdateCallback mCallback;
     private boolean isBindService;
@@ -96,7 +93,7 @@ public final class Updater {
                                 mCallback.onLoadSuccess(downUri, isCache);
                                 mCallback.onCompleted(true, Utils.getCurrentVersionName(mBuilder.context));
                             }
-                            Utils.installApk(mBuilder.context, downUri, Updater.REQUEST_CODE_INSTALL_APK);
+                            Utils.installApk(mBuilder.context, downUri);
                         }
 
                         @Override
@@ -199,9 +196,9 @@ public final class Updater {
             mIsChecked = true;
             mUpdateInfo = updateInfo;
             mBuilder.informDialogConfig.setMsg(updateInfo.getUpdateMessage());
-            mLocalVersionCode = Utils.getApkVersionCodeFromSp(mBuilder.context);
+            mLatestVersionCode = Utils.getApkVersionCodeFromSp(mBuilder.context);
             //如果这个条件满足说明上一次没有安装。有因为即使上一次没有安装最新的版本也有可能超出了上一次下载的版本，所以要在这里判断。
-            if (mLocalVersionCode == updateInfo.getVersionCode() && new File(Utils.getApkPathFromSp(mBuilder.context)).exists()) {
+            if (mLatestVersionCode == updateInfo.getVersionCode() && new File(Utils.getApkPathFromSp(mBuilder.context)).exists()) {
                 mIsLoaded = true;
             } else {
                 Utils.removeOldApk(mBuilder.context);
@@ -261,14 +258,16 @@ public final class Updater {
                     mCallback.onLoadSuccess(apkPath, true);
                     mCallback.onCompleted(true, Utils.getCurrentVersionName(mBuilder.context));
                 }
-                Utils.installApk(mBuilder.context, apkPath, Updater.REQUEST_CODE_INSTALL_APK);
+                Utils.installApk(mBuilder.context, apkPath);
             } else {
                 mLatestVersionCode = mUpdateInfo.getVersionCode();
                 mBuilder.fileName = getApkName(mUpdateInfo);
                 startDownload(mBuilder.fileName, mUpdateInfo.getDownLoadsUrl(), isForceUpdate(mUpdateInfo), mBuilder.mTitle, mBuilder.mDescription);
             }
         } else {
-            mCallback.onLoadCancelled();
+            if (mCallback != null) {
+                mCallback.onLoadCancelled();
+            }
         }
     }
 
@@ -285,6 +284,9 @@ public final class Updater {
     public void download(@NonNull UpdateInfo updateInfo, CharSequence notifyCationTitle, CharSequence notifyCationDesc) {
         if (mIsChecked) {  //如果检查更新不是自己检查的就不能调用这个方法。
             throw new IllegalStateException("Because you update the action is completed, so you can't call this method.");
+        }
+        if (TextUtils.isEmpty(notifyCationTitle)) {
+            notifyCationTitle = "正在下载更新";
         }
         mUpdateInfo = updateInfo;
         startDownload(getApkName(updateInfo), updateInfo.getDownLoadsUrl(), isForceUpdate(updateInfo), notifyCationTitle, notifyCationDesc);
@@ -389,16 +391,6 @@ public final class Updater {
          *
          * @param message 对话框的消息。
          */
-        public Builder setCheckDialogMessage(String message) {
-            informDialogConfig.setMsg(message);
-            return this;
-        }
-
-        /**
-         * 配置下载更新时对话框的消息。
-         *
-         * @param message 对话框的消息。
-         */
         public Builder setDownloadDialogMessage(String message) {
             loadDialogConfig.setMsg(message);
             return this;
@@ -423,7 +415,7 @@ public final class Updater {
         /**
          * 如果你希望自己创建对话框，而不适用默认提供的对话框，可以调用该方法将默认的对话框关闭。
          * 如果你关闭了默认的对话框的话就必须自己实现UI交互，并且在用户更新提示做出反应的时候调用
-         * {@link #respondCheckHandlerResult(boolean)} 方法。
+         * {@link #setCheckHandlerResult(boolean)} 方法。
          */
         public Builder setNoDialog() {
             this.noDialog = true;

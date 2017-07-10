@@ -1,6 +1,5 @@
 package com.chengshi.kelin.updatemanagerdemo;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -48,17 +47,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 new Updater.Builder(MainActivity.this).builder().check(updateModel);
             }
         });
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == Updater.REQUEST_CODE_INSTALL_APK) {
-            boolean installed = resultCode != RESULT_CANCELED;
-            if (!installed && mIsForceUpdate) {
-                finish();
-            }
-            Toast.makeText(getApplicationContext(), installed ? "安装成功！" : "应用未被安装！", Toast.LENGTH_SHORT).show();
-        }
     }
 }

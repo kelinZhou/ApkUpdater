@@ -64,18 +64,17 @@ public class Utils {
 
     /**
      * 安装APK
-     * @param context {@link Activity} 对象，用户有没有安装可以通过此{@link Activity} 的 {@link Activity#onActivityResult(int, int, Intent)} 方法进行检测。
-     *                                如果 requestCode == {@link Updater#REQUEST_CODE_INSTALL_APK} 就说明是用户安装的结果。
+     * @param context {@link Activity} 对象。
      * @param apkPath 安装包的路径
-     * @param requestCode 安装APK的请求码。
      */
-    public static void installApk(Activity context, Uri apkPath, int requestCode) {
+    public static void installApk(Activity context, Uri apkPath) {
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_VIEW);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addCategory("android.intent.category.DEFAULT");
         intent.setDataAndType(apkPath, "application/vnd.android.package-archive");
-        context.startActivityForResult(intent, requestCode);
-//        android.os.Process.killProcess(android.os.Process.myPid());
+        context.startActivity(intent);
+        android.os.Process.killProcess(android.os.Process.myPid());
     }
 
     /**
