@@ -3,18 +3,11 @@ package com.chengshi.kelin.updatemanagerdemo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.Toast;
 
 import com.chengshi.apkUpdater.Updater;
-import com.chengshi.kelin.updatemanagerdemo.net.NetApiImpl;
-
-import rx.Subscriber;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private boolean mIsForceUpdate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,27 +18,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        checkUpdate();
-    }
-
-    private void checkUpdate() {
-        NetApiImpl netApi = new NetApiImpl("http://update.useonline.cn/api/project/msg/Test_uhu");
-        netApi.getApkUpdateInfo().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<UpdateModel>() {
-
-            @Override
-            public void onCompleted() {}
-
-            @Override
-            public void onError(Throwable e) {
-                Toast.makeText(getApplicationContext(), "检查更新失败。", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onNext(UpdateModel updateModel) {
-                mIsForceUpdate = updateModel.isForceUpdate();
-                new Updater.Builder(MainActivity.this).builder().check(updateModel);
-            }
-        });
+        new Updater.Builder(MainActivity.this).builder().check(new UpdateModel());
     }
 }
