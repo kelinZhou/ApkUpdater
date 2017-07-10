@@ -36,13 +36,14 @@ public final class Updater {
     private final UpdateCallback mCallback;
     private boolean isBindService;
     private ServiceConnection conn;
-    private boolean isForceUpdate;
     private Intent mServiceIntent;
     private DefaultDialog mProgressDialog;
     private int mLatestVersionCode;
     private boolean mIsLoaded;
     private UpdateInfo mUpdateInfo;
     private boolean mHaveNewVersion;
+    private boolean mIsChecked;
+    private int mLocalVersionCode = 0xffff_ffff;
 
     /**
      * 私有构造函数，防止其他类创建本类对象。
@@ -68,7 +69,7 @@ public final class Updater {
                         public void onStartLoad() {
                             mCallback.onStartLoad();
                             if (!mBuilder.noDialog) {
-                                mBuilder.loadDialogConfig.setForceUpdate(isForceUpdate);
+                                mBuilder.loadDialogConfig.setForceUpdate(isForceUpdate(mUpdateInfo));
                                 showProgressDialog();
                             }
                         }
@@ -126,6 +127,35 @@ public final class Updater {
     }
 
     /**
+     * 判断当前版本是否是强制更新。
+     * @return 如果是返回true，否则返回false。
+     */
+    private boolean isForceUpdate(@NonNull UpdateInfo updateInfo) {
+        if (!updateInfo.isForceUpdate()) {
+            return false;
+        } else {
+            int[] codes = updateInfo.getForceUpdateVersionCodes();
+            if (codes == null || codes.length == 0) {
+                return true;
+            } else {
+                for (int code : codes) {
+                    if (getLocalVersionCode() == code) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+    }
+
+    private int getLocalVersionCode() {
+        if (mLocalVersionCode == 0xffff_ffff) {
+            mLocalVersionCode = Utils.getCurrentVersionCode(mBuilder.context);
+        }
+        return mLocalVersionCode;
+    }
+
+    /**
      * 显示进度条对话框。
      */
     private void showProgressDialog() {
@@ -156,16 +186,17 @@ public final class Updater {
         if (updateInfo != null && mUpdateInfo != updateInfo) {
             mUpdateInfo = updateInfo;
             mBuilder.informDialogConfig.setMsg(updateInfo.getUpdateMessage());
-            int latestVersionCode = Utils.getApkVersionCodeFromSp(mBuilder.context);
+            mLocalVersionCode = Utils.getApkVersionCodeFromSp(mBuilder.context);
             //如果这个条件满足说明上一次没有安装。有因为即使上一次没有安装最新的版本也有可能超出了上一次下载的版本，所以要在这里判断。
-            if (latestVersionCode == updateInfo.getVersionCode() && new File(Utils.getApkPathFromSp(mBuilder.context)).exists()) {
+            if (mLocalVersionCode == updateInfo.getVersionCode() && new File(Utils.getApkPathFromSp(mBuilder.context)).exists()) {
                 mIsLoaded = true;
             } else {
                 Utils.removeOldApk(mBuilder.context);
             }
-            if (updateInfo.getVersionCode() > Utils.getCurrentVersionCode(mBuilder.context)) {
+            if (updateInfo.getVersionCode() > getLocalVersionCode()) {
                 mHaveNewVersion = true;
                 if (!mBuilder.noDialog) {
+                    mBuilder.informDialogConfig.setForceUpdate(isForceUpdate(updateInfo));
                     showUpdateInformDialog();
                 } else {
                     mCallback.onShowCheckHintDialog();
@@ -184,35 +215,59 @@ public final class Updater {
                 .show(new DialogListener() {
                     @Override
                     public void onDialogDismiss(boolean isSure) {
-                        setCheckHandlerResult(isSure);
+                        respondCheckHandlerResult(isSure);
                     }
                 });
     }
 
     /**
-     * 设置检查更新的对话框的操作结果。
+     * 设置检查更新的对话框的操作结果。如果你没有关闭默认的对话框使用自定义对话框的话请不要手动调用该方法。
      * @param isContinue 是否继续，如果继续则说明统一更新，否则就是不统一更新。
      */
     public void setCheckHandlerResult(boolean isContinue) {
+        if (!mBuilder.noDialog) {
+            throw new IllegalStateException("Because of your dialog is not custom, so you can't call the method.");
+        }
+        respondCheckHandlerResult(isContinue);
+    }
+
+    /**
+     * 响应检查更新的对话框的操作结果。如果你没有关闭默认的对话框使用自定义对话框的话请不要手动调用该方法。
+     * @param isContinue 是否继续，如果继续则说明统一更新，否则就是不统一更新。
+     */
+    private void respondCheckHandlerResult(boolean isContinue) {
+        mIsChecked = true;
         if (isContinue && mHaveNewVersion) {
             if (mIsLoaded) {
                 File file = new File(Utils.getApkPathFromSp(mBuilder.context));
                 Uri apkPath = Uri.fromFile(file);
                 Utils.installApk(mBuilder.context, apkPath, Updater.REQUEST_CODE_INSTALL_APK);
             } else {
-                isForceUpdate = mUpdateInfo.isForceUpdate();
                 mLatestVersionCode = mUpdateInfo.getVersionCode();
-                String fileName = mUpdateInfo.getApkName();
-                if (!TextUtils.isEmpty(fileName)) {
-                    mBuilder.fileName = fileName;
-                } else {
-                    mBuilder.fileName = getDefaultApkName();
-                }
-                startDownload(mBuilder.fileName, mUpdateInfo.getDownLoadsUrl(), isForceUpdate, mBuilder.mTitle, mBuilder.mDescription);
+                mBuilder.fileName = getApkName(mUpdateInfo);
+                startDownload(mBuilder.fileName, mUpdateInfo.getDownLoadsUrl(), isForceUpdate(mUpdateInfo), mBuilder.mTitle, mBuilder.mDescription);
             }
         } else {
-            mCallback.onLoadCancelled(isForceUpdate);
+            mCallback.onLoadCancelled(isForceUpdate(mUpdateInfo));
         }
+    }
+
+    private String getApkName(@NonNull UpdateInfo updateInfo){
+        return TextUtils.isEmpty(updateInfo.getApkName()) ? getDefaultApkName() : updateInfo.getApkName();
+    }
+
+    /**
+     * 开始下载。
+     * @param updateInfo apk名称。
+     * @param notifyCationTitle 下载过程中通知栏的标题。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
+     * @param notifyCationDesc 下载过程中通知栏的描述。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
+     */
+    public void download(@NonNull UpdateInfo updateInfo, CharSequence notifyCationTitle, CharSequence notifyCationDesc) {
+        if (mIsChecked) {  //如果检查更新不是自己检查的就不能调用这个方法。
+            throw new IllegalStateException("Because you update the action is completed, so you can't call this method.");
+        }
+        mUpdateInfo = updateInfo;
+        startDownload(getApkName(updateInfo), updateInfo.getDownLoadsUrl(), isForceUpdate(updateInfo), notifyCationTitle, notifyCationDesc);
     }
 
     /**
@@ -303,7 +358,9 @@ public final class Updater {
          */
         public Builder setDownloadDialogTitle(CharSequence title) {
             loadDialogConfig.setTitle(title);
-            setNotifyTitle(title);
+            if (this.mTitle == null) {
+                this.mTitle = title;
+            }
             return this;
         }
 
@@ -346,7 +403,7 @@ public final class Updater {
         /**
          * 如果你希望自己创建对话框，而不适用默认提供的对话框，可以调用该方法将默认的对话框关闭。
          * 如果你关闭了默认的对话框的话就必须自己实现UI交互，并且在用户更新提示做出反应的时候调用
-         * {@link #setCheckHandlerResult(boolean)} 方法。
+         * {@link #respondCheckHandlerResult(boolean)} 方法。
          */
         public Builder setNoDialog() {
             this.noDialog = true;

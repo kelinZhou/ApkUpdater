@@ -88,9 +88,9 @@ public class DefaultDialog {
                     }
                 });
             }
-            builder.setPositiveButton("确定", onClickListener);  //设置确定按钮
+            builder.setPositiveButton("立刻安装", onClickListener);  //设置确定按钮
             if (!mConfig.isForceUpdate()) {
-                builder.setNegativeButton("取消", onClickListener); //如果不是强制更新则设置取消按钮
+                builder.setCancelable(true).setNegativeButton("稍候安装", onClickListener); //如果不是强制更新则设置取消按钮
             }
         }
 

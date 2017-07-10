@@ -1,6 +1,7 @@
 package com.chengshi.kelin.updatemanagerdemo;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.chengshi.apkUpdater.UpdateInfo;
 
@@ -36,6 +37,19 @@ public class UpdateModel implements UpdateInfo {
         return data.latest_package.update_level == 1;
     }
 
+    /**
+     * 获取强制更新的版本号，如果你的本次强制更新是针对某个或某些版本的话，你可以在该方法中返回。前提是 {@link #isForceUpdate()}
+     * 返回值必须为true，否则该方法的返回值是没有意义的。
+     *
+     * @return 返回你要强制更新的版本号，可以返回 null ，如果返回 null 并且 {@link #isForceUpdate()} 返回 true 的话
+     * 则表示所有版本全部强制更新。
+     */
+    @Nullable
+    @Override
+    public int[] getForceUpdateVersionCodes() {
+        return null;
+    }
+
     @NonNull
     @Override
     public String getApkName() {
@@ -44,7 +58,7 @@ public class UpdateModel implements UpdateInfo {
 
     @Override
     public CharSequence getUpdateMessage() {
-        return String.format("%s%n%n%s", data.latest_package.update_content, "是否现在更新？");
+        return data.latest_package.update_content;
     }
 
     public String getMsg() {

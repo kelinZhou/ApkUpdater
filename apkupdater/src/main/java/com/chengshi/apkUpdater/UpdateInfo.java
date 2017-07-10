@@ -1,6 +1,6 @@
 package com.chengshi.apkUpdater;
 
-import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 /**
  * 描述 需要更新的Apk信息对象。
@@ -29,12 +29,21 @@ public interface UpdateInfo {
     boolean isForceUpdate();
 
     /**
-     * 获取Apk文件名(例如 xxx.apk 或 xxx)。后缀名不是必须的。但一定不能返回null。
+     * 获取强制更新的版本号，如果你的本次强制更新是针对某个或某些版本的话，你可以在该方法中返回。前提是 {@link #isForceUpdate()}
+     * 返回值必须为true，否则该方法的返回值是没有意义的。
+     * @return 返回你要强制更新的版本号，可以返回 null ，如果返回 null 并且 {@link #isForceUpdate()} 返回 true 的话
+     * 则表示所有版本全部强制更新。
      */
-    @NonNull String getApkName();
+    @Nullable int[] getForceUpdateVersionCodes();
 
     /**
-     * 获取更新的内容。
+     * 获取Apk文件名(例如 xxx.apk 或 xxx)。后缀名不是必须的。
+     */
+    @Nullable String getApkName();
+
+    /**
+     * 获取更新的内容。就是你本次更新了那些东西可以在这里返回，这里返回的内容会现在是Dialog的消息中，如果你没有禁用Dialog的话。
+     * @return 返回你本次更新的内容。
      */
     CharSequence getUpdateMessage();
 }

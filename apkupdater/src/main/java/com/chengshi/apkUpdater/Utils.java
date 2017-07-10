@@ -70,7 +70,7 @@ public class Utils {
      * @param apkPath 安装包的路径
      * @param requestCode 安装APK的请求码。
      */
-    static void installApk(Activity context, Uri apkPath, int requestCode) {
+    public static void installApk(Activity context, Uri apkPath, int requestCode) {
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_VIEW);
         intent.addCategory("android.intent.category.DEFAULT");
