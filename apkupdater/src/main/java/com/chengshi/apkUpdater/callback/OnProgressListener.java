@@ -28,8 +28,10 @@ public interface OnProgressListener {
     /**
      * 下载完成。
      * @param downUri 已经下载好的APK存储地址。
+     * @param isCache 是否是缓存，如果改参数为true说明本次并没有真正的执行下载任务，因为上一次用户下载完毕后并没有进行
+     *                安装操作。而本次检测更新网络上的最新版本和上一次下载的版本号是相同的。
      */
-    void onLoadSuccess(Uri downUri);
+    void onLoadSuccess(Uri downUri, boolean isCache);
 
     /**
      * 当下载失败的时候调用。

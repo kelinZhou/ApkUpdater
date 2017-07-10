@@ -7,7 +7,6 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.chengshi.apkUpdater.Updater;
-import com.chengshi.apkUpdater.callback.UpdateCallback;
 import com.chengshi.kelin.updatemanagerdemo.net.NetApiImpl;
 
 import rx.Subscriber;
@@ -16,7 +15,6 @@ import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private Updater mUpdater;
     private boolean mIsForceUpdate;
 
     @Override
@@ -28,15 +26,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        mUpdater = new Updater.Builder(this).setCallback(new UpdateCallback() {
-            @Override
-            public void onLoadCancelled(boolean isForceUpdate) {
-                if (isForceUpdate) {
-                    finish();
-                }
-            }
-        }).builder();
-
         checkUpdate();
     }
 
@@ -56,7 +45,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onNext(UpdateModel updateModel) {
                 mIsForceUpdate = updateModel.isForceUpdate();
-                mUpdater.check(updateModel);
+                new Updater.Builder(MainActivity.this).builder().check(updateModel);
             }
         });
     }

@@ -67,7 +67,9 @@ public final class Updater {
 
                         @Override
                         public void onStartLoad() {
-                            mCallback.onStartLoad();
+                            if (mCallback != null) {
+                                mCallback.onStartLoad();
+                            }
                             if (!mBuilder.noDialog) {
                                 mBuilder.loadDialogConfig.setForceUpdate(isForceUpdate(mUpdateInfo));
                                 showProgressDialog();
@@ -79,35 +81,45 @@ public final class Updater {
                             if (percentage == 100 || total == current) {
                                 Utils.putApkVersionCode2Sp(mBuilder.context, mLatestVersionCode);
                             }
-                            mCallback.onProgress(total, current, percentage);
+                            if (mCallback != null) {
+                                mCallback.onProgress(total, current, percentage);
+                            }
                             if (!mBuilder.noDialog) {
                                 updateProgressDialog(percentage);
                             }
                         }
 
                         @Override
-                        public void onLoadSuccess(Uri downIdUri) {
-                            Utils.installApk(mBuilder.context, downIdUri, Updater.REQUEST_CODE_INSTALL_APK);
+                        public void onLoadSuccess(Uri downUri, boolean isCache) {
                             stopService();  //结束服务
-                            mCallback.onLoadSuccess(downIdUri);
-                            mCallback.onCompleted(true);
+                            if (mCallback != null) {
+                                mCallback.onLoadSuccess(downUri, isCache);
+                                mCallback.onCompleted(true, Utils.getCurrentVersionName(mBuilder.context));
+                            }
+                            Utils.installApk(mBuilder.context, downUri, Updater.REQUEST_CODE_INSTALL_APK);
                         }
 
                         @Override
                         public void onLoadFailed() {
                             stopService();  //结束服务
-                            mCallback.onLoadFailed();
-                            mCallback.onCompleted(true);
+                            if (mCallback != null) {
+                                mCallback.onLoadFailed();
+                                mCallback.onCompleted(true, Utils.getCurrentVersionName(mBuilder.context));
+                            }
                         }
 
                         @Override
                         public void onLoadPaused() {
-                            mCallback.onLoadPaused();
+                            if (mCallback != null) {
+                                mCallback.onLoadPaused();
+                            }
                         }
 
                         @Override
                         public void onLoadPending() {
-                            mCallback.onLoadPending();
+                            if (mCallback != null) {
+                                mCallback.onLoadPending();
+                            }
                         }
                     });
 
@@ -184,6 +196,7 @@ public final class Updater {
 
     public void check(UpdateInfo updateInfo) {
         if (updateInfo != null && mUpdateInfo != updateInfo) {
+            mIsChecked = true;
             mUpdateInfo = updateInfo;
             mBuilder.informDialogConfig.setMsg(updateInfo.getUpdateMessage());
             mLocalVersionCode = Utils.getApkVersionCodeFromSp(mBuilder.context);
@@ -199,10 +212,14 @@ public final class Updater {
                     mBuilder.informDialogConfig.setForceUpdate(isForceUpdate(updateInfo));
                     showUpdateInformDialog();
                 } else {
-                    mCallback.onShowCheckHintDialog();
+                    if (mCallback != null) {
+                        mCallback.onShowCheckHintDialog();
+                    }
                 }
             } else {
-                mCallback.onCompleted(false);
+                if (mCallback != null) {
+                    mCallback.onCompleted(false, Utils.getCurrentVersionName(mBuilder.context));
+                }
             }
         }
     }
@@ -225,7 +242,7 @@ public final class Updater {
      * @param isContinue 是否继续，如果继续则说明统一更新，否则就是不统一更新。
      */
     public void setCheckHandlerResult(boolean isContinue) {
-        if (!mBuilder.noDialog) {
+        if (!mBuilder.noDialog || !mIsChecked) {  //如果不是自定义UI交互或没有使用API提供的check方法检测更新的话不允许调用该方法。
             throw new IllegalStateException("Because of your dialog is not custom, so you can't call the method.");
         }
         respondCheckHandlerResult(isContinue);
@@ -236,11 +253,14 @@ public final class Updater {
      * @param isContinue 是否继续，如果继续则说明统一更新，否则就是不统一更新。
      */
     private void respondCheckHandlerResult(boolean isContinue) {
-        mIsChecked = true;
         if (isContinue && mHaveNewVersion) {
             if (mIsLoaded) {
                 File file = new File(Utils.getApkPathFromSp(mBuilder.context));
                 Uri apkPath = Uri.fromFile(file);
+                if (mCallback != null) {
+                    mCallback.onLoadSuccess(apkPath, true);
+                    mCallback.onCompleted(true, Utils.getCurrentVersionName(mBuilder.context));
+                }
                 Utils.installApk(mBuilder.context, apkPath, Updater.REQUEST_CODE_INSTALL_APK);
             } else {
                 mLatestVersionCode = mUpdateInfo.getVersionCode();
@@ -248,7 +268,7 @@ public final class Updater {
                 startDownload(mBuilder.fileName, mUpdateInfo.getDownLoadsUrl(), isForceUpdate(mUpdateInfo), mBuilder.mTitle, mBuilder.mDescription);
             }
         } else {
-            mCallback.onLoadCancelled(isForceUpdate(mUpdateInfo));
+            mCallback.onLoadCancelled();
         }
     }
 

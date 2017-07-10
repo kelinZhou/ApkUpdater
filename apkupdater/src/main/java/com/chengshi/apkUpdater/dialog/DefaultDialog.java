@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.support.v7.app.AlertDialog;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -76,17 +75,6 @@ public class DefaultDialog {
                         listener.onDialogDismiss(isSure);
                     }
                 };
-
-                builder.setOnKeyListener(new DialogInterface.OnKeyListener() {
-                    @Override
-                    public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-                        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
-                            mDialog.dismiss();
-                            listener.onDialogDismiss(false);
-                        }
-                        return false;
-                    }
-                });
             }
             builder.setPositiveButton("立刻安装", onClickListener);  //设置确定按钮
             if (!mConfig.isForceUpdate()) {

@@ -270,7 +270,7 @@ public class DownloadService extends Service {
                         case WHAT_COMPLETED:
                             if (!mIsLoadFailed) {
                                 Uri downUri = (Uri) msg.obj;
-                                onProgressListener.onLoadSuccess(downUri);
+                                onProgressListener.onLoadSuccess(downUri, false);
                             }
                             break;
                     }

@@ -34,9 +34,10 @@ public abstract class UpdateCallback implements OnProgressListener {
      * 下载完成。
      *
      * @param downUri 已经下载好的APK存储地址。
+     * @param isCache 是否是缓存，如果改参数为true说明本次并没有真正的执行下载任务，因为上一次用户下载完毕后并没有进行
      */
     @Override
-    public void onLoadSuccess(Uri downUri){};
+    public void onLoadSuccess(Uri downUri, boolean isCache) {}
 
     /**
      * 当下载失败的时候调用。
@@ -57,11 +58,9 @@ public abstract class UpdateCallback implements OnProgressListener {
     public void onLoadPending() {}
 
     /**
-     * 当下载被取消后调用。即表明用户不想进行本次更新。
-     *
-     * @param isForceUpdate 当前是否为强制更新。
+     * 当下载被取消后调用。即表明用户不想进行本次更新，强制更新是不能取消的。
      */
-    public abstract void onLoadCancelled(boolean isForceUpdate);
+    public abstract void onLoadCancelled();
 
     /**
      * 当任务完毕后被调用。无论任务成功还是失败，也无论是否需要更新。如果在检查更新阶段发现没有新的版本则会直接执行
@@ -71,8 +70,9 @@ public abstract class UpdateCallback implements OnProgressListener {
      * @param haveNewVersion 是否有新的版本。
      *                       <code color="blue">true</code>表示有新的版本,
      *                       <code color="blue">false</code>则表示没有新的版本。
+     * @param curVersionName 当前app的版本名称。
      */
-    public void onCompleted(boolean haveNewVersion) {}
+    public void onCompleted(boolean haveNewVersion, String curVersionName) {}
 
     /**
      * 当需要显示检查更新提示对话框的时候调用。你需要在这里进行检查更新提示对话框的显示。

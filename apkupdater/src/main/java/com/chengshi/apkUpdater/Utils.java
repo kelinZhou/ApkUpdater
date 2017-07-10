@@ -20,7 +20,6 @@ import java.io.File;
 
 public class Utils {
 
-    private static final String TAG = "Utils";
     private static final String CONFIG_NAME = "com_kelin_apkUpdater_config";
     /**
      * apk 文件存储路径
@@ -35,7 +34,7 @@ public class Utils {
      * @param context 需要一个上下文。
      * @return 返回当前的版本号。
      */
-    static int getCurrentVersionCode(Context context) {
+    public static int getCurrentVersionCode(Context context) {
         PackageManager packageManager = context.getPackageManager();
         PackageInfo packageInfo = null;
         try {
