@@ -50,6 +50,6 @@ public class UpdateModel implements UpdateInfo {
 
     @Override
     public CharSequence getUpdateMessage() {
-        return "1.修复了极端情况下可能导致下单失败的bug。 2.增加了许多新的玩法，并且增加了app的稳定性。 3.这是测试内容，其实什么都没有更新。";
+        return "1.修复了极端情况下可能导致下单失败的bug。\n2.增加了许多新的玩法，并且增加了app的稳定性。 \n3.这是测试内容，其实什么都没有更新。";
     }
 }

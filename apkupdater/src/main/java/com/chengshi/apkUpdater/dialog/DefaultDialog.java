@@ -3,6 +3,8 @@ package com.chengshi.apkUpdater.dialog;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Color;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -55,6 +57,13 @@ public class DefaultDialog {
         if (mConfig instanceof DownloadDialogConfig) {
             View contentView = LayoutInflater.from(mContext).inflate(R.layout.com_cheng_shi_layout_progress_layout, null);
             mProgressBar = (ProgressBar) contentView.findViewById(R.id.progress);
+            int drawableRes;
+            if (ContextCompat.getColor(mProgressBar.getContext(), R.color.colorPrimary) == Color.WHITE) {
+                drawableRes = R.drawable.com_cheng_shi_downloader_shape_progressbar_mini_default;
+            } else {
+                drawableRes = R.drawable.com_cheng_shi_downloader_shape_progressbar_mini;
+            }
+            mProgressBar.setProgressDrawable(ContextCompat.getDrawable(mProgressBar.getContext(), drawableRes));
             mPercentageView = (TextView) contentView.findViewById(R.id.tv_percentage);
             builder.setView(contentView);
             if (!mConfig.isForceUpdate()) {

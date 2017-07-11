@@ -76,7 +76,7 @@ public final class Updater {
                         @Override
                         public void onProgress(long total, long current, int percentage) {
                             if (percentage == 100 || total == current) {
-                                Utils.putApkVersionCode2Sp(mBuilder.context, mLatestVersionCode);
+                                Utils.putApkVersionCode2Sp(mBuilder.context, mUpdateInfo.getVersionCode());
                             }
                             if (mCallback != null) {
                                 mCallback.onProgress(total, current, percentage);
@@ -251,6 +251,7 @@ public final class Updater {
      */
     private void respondCheckHandlerResult(boolean isContinue) {
         if (isContinue && mHaveNewVersion) {
+            mIsLoaded = false;
             if (mIsLoaded) {
                 File file = new File(Utils.getApkPathFromSp(mBuilder.context));
                 Uri apkPath = Uri.fromFile(file);
@@ -260,7 +261,6 @@ public final class Updater {
                 }
                 Utils.installApk(mBuilder.context, apkPath);
             } else {
-                mLatestVersionCode = mUpdateInfo.getVersionCode();
                 mBuilder.fileName = getApkName(mUpdateInfo);
                 startDownload(mBuilder.fileName, mUpdateInfo.getDownLoadsUrl(), isForceUpdate(mUpdateInfo), mBuilder.mTitle, mBuilder.mDescription);
             }

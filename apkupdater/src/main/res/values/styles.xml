@@ -6,6 +6,5 @@
         <item name="android:indeterminateDrawable">
             @android:drawable/progress_indeterminate_horizontal
         </item>
-        <item name="android:progressDrawable">@drawable/com_cheng_shi_downloader_shape_progressbar_mini</item>
     </style>
 </resources>

@@ -1,3 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="colorPrimary">@color/colorTheme</color>
+    <color name="colorTheme">?colorPrimary</color>
+    <color name="colorDefaultProgressColor">#2E8B57</color>
 </resources>
