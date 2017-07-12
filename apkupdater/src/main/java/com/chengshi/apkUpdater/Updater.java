@@ -41,6 +41,7 @@ public final class Updater {
     private boolean mHaveNewVersion;
     private boolean mIsChecked;
     private int mLocalVersionCode = 0xffff_ffff;
+    private boolean mAutoInstall = true;
 
     /**
      * 私有构造函数，防止其他类创建本类对象。
@@ -93,7 +94,9 @@ public final class Updater {
                                 mCallback.onLoadSuccess(downUri, isCache);
                                 mCallback.onCompleted(true, Utils.getCurrentVersionName(mBuilder.context));
                             }
-                            Utils.installApk(mBuilder.context, downUri);
+                            if (mAutoInstall) {
+                                Utils.installApk(mBuilder.context, downUri);
+                            }
                         }
 
                         @Override
@@ -191,8 +194,25 @@ public final class Updater {
         mBuilder.context.stopService(mServiceIntent);
     }
 
+    /**
+     * 检查更新并自动安装。
+     * @param updateInfo 更新信息对象。
+     */
     public void check(UpdateInfo updateInfo) {
+        check(updateInfo, true);
+    }
+
+    /**
+     * 检查更新。
+     * @param updateInfo 更新信息对象。
+     * @param autoInstall 是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
+     */
+    public void check(UpdateInfo updateInfo, boolean autoInstall) {
+        if (!autoInstall && mBuilder.callback == null) {
+            throw new IllegalArgumentException("Because you neither set up to monitor installed automatically, so the check update is pointless.");
+        }
         if (updateInfo != null && mUpdateInfo != updateInfo) {
+            mAutoInstall = autoInstall;
             mIsChecked = true;
             mUpdateInfo = updateInfo;
             mBuilder.informDialogConfig.setMsg(updateInfo.getUpdateMessage());
@@ -251,7 +271,6 @@ public final class Updater {
      */
     private void respondCheckHandlerResult(boolean isContinue) {
         if (isContinue && mHaveNewVersion) {
-            mIsLoaded = false;
             if (mIsLoaded) {
                 File file = new File(Utils.getApkPathFromSp(mBuilder.context));
                 Uri apkPath = Uri.fromFile(file);
@@ -259,7 +278,9 @@ public final class Updater {
                     mCallback.onLoadSuccess(apkPath, true);
                     mCallback.onCompleted(true, Utils.getCurrentVersionName(mBuilder.context));
                 }
-                Utils.installApk(mBuilder.context, apkPath);
+                if (mAutoInstall) {
+                    Utils.installApk(mBuilder.context, apkPath);
+                }
             } else {
                 mBuilder.fileName = getApkName(mUpdateInfo);
                 startDownload(mBuilder.fileName, mUpdateInfo.getDownLoadsUrl(), isForceUpdate(mUpdateInfo), mBuilder.mTitle, mBuilder.mDescription);
@@ -277,17 +298,39 @@ public final class Updater {
 
     /**
      * 开始下载。
-     * @param updateInfo apk名称。
+     * @param updateInfo 更新信息对象。
+     */
+    public void download(@NonNull UpdateInfo updateInfo) {
+        download(updateInfo, true);
+    }
+
+    /**
+     * 开始下载。
+     * @param updateInfo 更新信息对象。
+     * @param autoInstall 是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
+     */
+    public void download(@NonNull UpdateInfo updateInfo, boolean autoInstall) {
+        download(updateInfo, null, null, autoInstall);
+    }
+
+    /**
+     * 开始下载。
+     * @param updateInfo 更新信息对象。
      * @param notifyCationTitle 下载过程中通知栏的标题。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
      * @param notifyCationDesc 下载过程中通知栏的描述。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
+     * @param autoInstall 是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
      */
-    public void download(@NonNull UpdateInfo updateInfo, CharSequence notifyCationTitle, CharSequence notifyCationDesc) {
+    public void download(@NonNull UpdateInfo updateInfo, CharSequence notifyCationTitle, CharSequence notifyCationDesc, boolean autoInstall) {
         if (mIsChecked) {  //如果检查更新不是自己检查的就不能调用这个方法。
             throw new IllegalStateException("Because you update the action is completed, so you can't call this method.");
+        }
+        if (!autoInstall && mBuilder.callback == null) {
+            throw new IllegalArgumentException("Because you have neither set up to monitor installed automatically, so the download is pointless.");
         }
         if (TextUtils.isEmpty(notifyCationTitle)) {
             notifyCationTitle = "正在下载更新";
         }
+        mAutoInstall = autoInstall;
         mUpdateInfo = updateInfo;
         startDownload(getApkName(updateInfo), updateInfo.getDownLoadsUrl(), isForceUpdate(updateInfo), notifyCationTitle, notifyCationDesc);
     }
