@@ -8,11 +8,11 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.kelin.apkUpdater.R;
-import com.kelin.apkUpdater.callback.DialogListener;
 
 import java.util.Locale;
 
@@ -31,7 +31,7 @@ public class DefaultDialog {
     private ProgressBar mProgressBar;
     private TextView mPercentageView;
     private DialogClickListener mOnClickListener;
-    private DialogConfig mConfig;
+    private DialogParams mConfig;
 
     public DefaultDialog(Context context) {
         mContext = context;
@@ -40,7 +40,7 @@ public class DefaultDialog {
     /**
      * 显示对话框。
      */
-    public void show(DialogConfig config) {
+    public void show(DialogParams config) {
         show(config, null);
     }
 
@@ -50,7 +50,7 @@ public class DefaultDialog {
      * @param listener 对话框的监听。
      */
     @SuppressLint("InflateParams")
-    public void show(DialogConfig config, final DialogListener listener) {
+    public void show(DialogParams config, final DialogListener listener) {
         if (mWiFiUnusableDialog != null && mWiFiUnusableDialog.isShowing()) {
             mWiFiUnusableDialog.dismiss();
         }
@@ -62,7 +62,7 @@ public class DefaultDialog {
             //构建AlertDialog。
             AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
             builder.setCancelable(false);
-            if (config instanceof DownloadDialogConfig) {
+            if (config instanceof DownloadDialogParams) {
                 View contentView = LayoutInflater.from(mContext).inflate(R.layout.com_cheng_shi_layout_progress_layout, null);
                 mProgressBar = (ProgressBar) contentView.findViewById(R.id.progress);
                 int drawableRes;
@@ -98,6 +98,7 @@ public class DefaultDialog {
                     .setMessage(config.getMessage());  //设置内容
             mDialog = builder.create();
         }
+        mDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
         mDialog.show();
     }
 
@@ -121,7 +122,13 @@ public class DefaultDialog {
             mOnClickListener = new DialogClickListener();
         }
         if (mWiFiUnusableDialog == null) {
-            mWiFiUnusableDialog = new AlertDialog.Builder(mContext).setTitle("提示：").setMessage("当前为非WiFi网络，是否继续下载？").setPositiveButton("继续下载", mOnClickListener).setNegativeButton("稍后下载", mOnClickListener).create();
+            mWiFiUnusableDialog = new AlertDialog.Builder(mContext)
+                    .setTitle("提示：")
+                    .setMessage("当前为非WiFi网络，是否继续下载？")
+                    .setPositiveButton("继续下载", mOnClickListener)
+                    .setNegativeButton("稍后下载", mOnClickListener)
+                    .create();
+            mWiFiUnusableDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
         }
         mOnClickListener.setListener(listener);
         mWiFiUnusableDialog.show();
@@ -141,6 +148,7 @@ public class DefaultDialog {
 
         if (mNetWorkUnusableDialog == null) {
             mNetWorkUnusableDialog = new AlertDialog.Builder(mContext).setTitle("提示：").setMessage("网络连接已经断开，请稍后再试。").setNegativeButton("确定", mOnClickListener).create();
+            mNetWorkUnusableDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
         }
         mOnClickListener.setListener(listener);
         mNetWorkUnusableDialog.show();
@@ -159,4 +167,14 @@ public class DefaultDialog {
         }
     }
 
+    public interface DialogListener {
+
+        /**
+         * 当用户点击了取消按钮,或通过其他方式销毁了{@link com.kelin.apkUpdater.dialog.DefaultDialog}后回调的方法。
+         *
+         * @param isSure 是否是通过点击确认按钮后销毁的。<code color="blue">true</code>表示是,
+         *                 <code color="blue">false</code>则表示不是。
+         */
+        void onDialogDismiss(boolean isSure);
+    }
 }

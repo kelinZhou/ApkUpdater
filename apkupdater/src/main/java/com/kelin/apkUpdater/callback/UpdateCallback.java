@@ -11,8 +11,7 @@ import com.kelin.apkUpdater.Updater;
  * 包名 com.chengshi.downloader.callbacks
  */
 
-public abstract class UpdateCallback implements OnProgressListener {
-
+public abstract class UpdateCallback implements DownloadProgressCallback {
     /**
      * 开始下载，在开始执行下载的时候调用。如果你在构建 {@link Updater.Builder} 的时候调用了
      * {@link Updater.Builder#setNoDialog()} 方法关闭了默认对话框的话，那么你需要在这做显示下载进度操作。

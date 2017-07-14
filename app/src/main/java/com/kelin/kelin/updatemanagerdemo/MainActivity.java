@@ -18,6 +18,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        new Updater.Builder(MainActivity.this).builder().check(new UpdateModel());
+        new Updater.Builder(this).setCheckWiFiState(false).builder().check(new UpdateModel());
     }
 }

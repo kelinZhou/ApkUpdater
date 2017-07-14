@@ -67,7 +67,7 @@ public class UpdateHelper {
      * @param context {@link Activity} 对象。
      * @param apkPath 安装包的路径
      */
-    public static void installApk(Activity context, Uri apkPath) {
+    public static void installApk(Context context, Uri apkPath) {
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_VIEW);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

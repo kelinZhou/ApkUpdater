@@ -10,7 +10,7 @@ import android.text.TextUtils;
  * 版本 v 1.0.0
  */
 
-abstract class DialogConfig {
+abstract class DialogParams {
 
     @DrawableRes
     protected int icon;

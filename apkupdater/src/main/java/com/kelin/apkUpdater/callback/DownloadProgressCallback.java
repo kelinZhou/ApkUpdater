@@ -9,7 +9,7 @@ import android.net.Uri;
  * 版本 v 1.0.0
  */
 
-public interface OnProgressListener {
+public interface DownloadProgressCallback {
 
     /**
      * 当下载开始的时候调用。

@@ -15,8 +15,8 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import com.kelin.apkUpdater.callback.OnProgressListener;
-import com.kelin.apkUpdater.callback.ServiceUnBindListener;
+
+import com.kelin.apkUpdater.callback.DownloadProgressCallback;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -67,7 +67,7 @@ public class DownloadService extends Service {
 
     //下载任务ID
     private long downloadId;
-    private OnProgressListener onProgressListener;
+    private DownloadProgressCallback onProgressListener;
 
     public Handler downLoadHandler;
 
@@ -339,9 +339,9 @@ public class DownloadService extends Service {
 
     /**
      * 设置进度更新监听。
-     * @param onProgressListener {@link OnProgressListener} 的实现类对象。
+     * @param onProgressListener {@link DownloadProgressCallback} 的实现类对象。
      */
-    void setOnProgressListener(OnProgressListener onProgressListener) {
+    void setOnProgressListener(DownloadProgressCallback onProgressListener) {
         this.onProgressListener = onProgressListener;
     }
 
@@ -366,5 +366,13 @@ public class DownloadService extends Service {
         close();
         unregisterBroadcast();
         unregisterContentObserver();
+    }
+
+    interface ServiceUnBindListener {
+
+        /**
+         * 当服务被解绑的时候回调。
+         */
+        void onUnBind();
     }
 }
