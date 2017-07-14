@@ -1,4 +1,4 @@
-package com.chengshi.apkUpdater;
+package com.kelin.apkUpdater;
 
 import android.app.Activity;
 import android.content.Context;
@@ -18,7 +18,7 @@ import java.io.File;
  * 创建时间 2016/10/14  下午12:26
  */
 
-public class Utils {
+public class UpdateHelper {
 
     private static final String CONFIG_NAME = "com_kelin_apkUpdater_config";
     /**

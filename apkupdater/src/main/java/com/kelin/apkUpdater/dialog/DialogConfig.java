@@ -1,4 +1,4 @@
-package com.chengshi.apkUpdater.dialog;
+package com.kelin.apkUpdater.dialog;
 
 import android.support.annotation.DrawableRes;
 import android.text.TextUtils;

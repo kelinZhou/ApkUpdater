@@ -26,6 +26,22 @@ dependencies {
 ```
 
 ## 使用
+###### 添加权限
+你需要在你的清单文件中添加以下权限：
+```
+    <!--网络访问权限-->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!--SD卡读权限-->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <!--SD卡写权限-->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <!--不弹出通知栏权限-->
+    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"/>
+    <!--DownloadManager-->
+    <uses-permission android:name="android.permission.ACCESS_DOWNLOAD_MANAGER"/>
+    <!--获取网络状态权限-->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+```
 ###### 获取更新信息
 首先利用你项目的网络访问能力从服务端获取更新信息并转换为**javaBean**对象，然后让这个对象实现**UpdateInfo**接口。下面是这个接口中所有方法：
 ```

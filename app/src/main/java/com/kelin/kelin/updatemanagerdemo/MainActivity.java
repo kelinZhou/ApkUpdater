@@ -1,10 +1,10 @@
-package com.chengshi.kelin.updatemanagerdemo;
+package com.kelin.kelin.updatemanagerdemo;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
-import com.chengshi.apkUpdater.Updater;
+import com.kelin.apkUpdater.Updater;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 

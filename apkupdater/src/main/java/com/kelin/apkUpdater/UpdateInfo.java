@@ -1,4 +1,4 @@
-package com.chengshi.apkUpdater;
+package com.kelin.apkUpdater;
 
 import android.support.annotation.Nullable;
 

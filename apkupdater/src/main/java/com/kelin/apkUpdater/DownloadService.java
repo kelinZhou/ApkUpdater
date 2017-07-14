@@ -1,4 +1,4 @@
-package com.chengshi.apkUpdater;
+package com.kelin.apkUpdater;
 
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
@@ -15,8 +15,8 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import com.chengshi.apkUpdater.callback.OnProgressListener;
-import com.chengshi.apkUpdater.callback.ServiceUnBindListener;
+import com.kelin.apkUpdater.callback.OnProgressListener;
+import com.kelin.apkUpdater.callback.ServiceUnBindListener;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -60,7 +60,6 @@ public class DownloadService extends Service {
      */
     public static final String KEY_APK_NAME = "key_apk_name";
 
-    private DownloadBinder binder;
     private DownloadManager downloadManager;
     private DownloadChangeObserver downloadObserver;
     private BroadcastReceiver downLoadBroadcast;
@@ -89,7 +88,6 @@ public class DownloadService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        binder = new DownloadBinder();
         if (downLoadHandler == null) {
             downLoadHandler = getHandler();
         }
@@ -114,7 +112,7 @@ public class DownloadService extends Service {
         mNotifyDescription = intent.getStringExtra(KEY_NOTIFY_DESCRIPTION);
         mApkName = intent.getStringExtra(KEY_APK_NAME);
         downloadApk(downloadUrl);
-        return binder;
+        return new DownloadBinder();
     }
 
     /**
@@ -294,7 +292,7 @@ public class DownloadService extends Service {
 
                         if (downIdUri != null) {
                             String downIdUriPath = downIdUri.getPath();
-                            Utils.putApkPath2Sp(getApplicationContext(), downIdUriPath);
+                            UpdateHelper.putApkPath2Sp(getApplicationContext(), downIdUriPath);
                         }
                         updateProgress();
                         downLoadHandler.sendMessage(downLoadHandler.obtainMessage(WHAT_COMPLETED, downIdUri));

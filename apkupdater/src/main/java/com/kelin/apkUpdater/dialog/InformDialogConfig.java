@@ -1,8 +1,8 @@
-package com.chengshi.apkUpdater.dialog;
+package com.kelin.apkUpdater.dialog;
 
 import android.text.TextUtils;
 
-import com.chengshi.apkUpdater.R;
+import com.kelin.apkUpdater.R;
 
 /**
  * 描述 检查更新时对话框的配置信息。

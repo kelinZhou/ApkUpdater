@@ -1,22 +1,24 @@
-package com.chengshi.apkUpdater;
+package com.kelin.apkUpdater;
 
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
-import com.chengshi.apkUpdater.callback.DialogListener;
-import com.chengshi.apkUpdater.callback.OnProgressListener;
-import com.chengshi.apkUpdater.callback.ServiceUnBindListener;
-import com.chengshi.apkUpdater.callback.UpdateCallback;
-import com.chengshi.apkUpdater.dialog.DefaultDialog;
-import com.chengshi.apkUpdater.dialog.DownloadDialogConfig;
-import com.chengshi.apkUpdater.dialog.InformDialogConfig;
+import com.kelin.apkUpdater.callback.DialogListener;
+import com.kelin.apkUpdater.callback.OnProgressListener;
+import com.kelin.apkUpdater.callback.ServiceUnBindListener;
+import com.kelin.apkUpdater.callback.UpdateCallback;
+import com.kelin.apkUpdater.dialog.DefaultDialog;
+import com.kelin.apkUpdater.dialog.DownloadDialogConfig;
+import com.kelin.apkUpdater.dialog.InformDialogConfig;
+import com.kelin.apkUpdater.util.NetWorkStateUtil;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -34,14 +36,16 @@ public final class Updater {
     private boolean isBindService;
     private ServiceConnection conn;
     private Intent mServiceIntent;
-    private DefaultDialog mProgressDialog;
-    private int mLatestVersionCode;
+    private DefaultDialog mDefaultDialog;
     private boolean mIsLoaded;
     private UpdateInfo mUpdateInfo;
     private boolean mHaveNewVersion;
     private boolean mIsChecked;
     private int mLocalVersionCode = 0xffff_ffff;
     private boolean mAutoInstall = true;
+    private NetWorkStateChangedReceiver mNetWorkStateChangedReceiver;
+    private DialogListener wifiUnusableDialogListener;
+    private OnLoadProgressListener mOnProgressListener;
 
     /**
      * 私有构造函数，防止其他类创建本类对象。
@@ -49,6 +53,7 @@ public final class Updater {
     private Updater(Builder builder) {
         mBuilder = builder;
         mCallback = mBuilder.callback;
+        mDefaultDialog = new DefaultDialog(mBuilder.context);
     }
 
     @NonNull
@@ -61,67 +66,10 @@ public final class Updater {
                     DownloadService downloadService = binder.getService();
 
                     //接口回调，下载进度
-                    downloadService.setOnProgressListener(new OnProgressListener() {
-
-                        @Override
-                        public void onStartLoad() {
-                            if (mCallback != null) {
-                                mCallback.onStartLoad();
-                            }
-                            if (!mBuilder.noDialog) {
-                                mBuilder.loadDialogConfig.setForceUpdate(isForceUpdate(mUpdateInfo));
-                                showProgressDialog();
-                            }
-                        }
-
-                        @Override
-                        public void onProgress(long total, long current, int percentage) {
-                            if (percentage == 100 || total == current) {
-                                Utils.putApkVersionCode2Sp(mBuilder.context, mUpdateInfo.getVersionCode());
-                            }
-                            if (mCallback != null) {
-                                mCallback.onProgress(total, current, percentage);
-                            }
-                            if (!mBuilder.noDialog) {
-                                updateProgressDialog(percentage);
-                            }
-                        }
-
-                        @Override
-                        public void onLoadSuccess(Uri downUri, boolean isCache) {
-                            stopService();  //结束服务
-                            if (mCallback != null) {
-                                mCallback.onLoadSuccess(downUri, isCache);
-                                mCallback.onCompleted(true, Utils.getCurrentVersionName(mBuilder.context));
-                            }
-                            if (mAutoInstall) {
-                                Utils.installApk(mBuilder.context, downUri);
-                            }
-                        }
-
-                        @Override
-                        public void onLoadFailed() {
-                            stopService();  //结束服务
-                            if (mCallback != null) {
-                                mCallback.onLoadFailed();
-                                mCallback.onCompleted(true, Utils.getCurrentVersionName(mBuilder.context));
-                            }
-                        }
-
-                        @Override
-                        public void onLoadPaused() {
-                            if (mCallback != null) {
-                                mCallback.onLoadPaused();
-                            }
-                        }
-
-                        @Override
-                        public void onLoadPending() {
-                            if (mCallback != null) {
-                                mCallback.onLoadPending();
-                            }
-                        }
-                    });
+                    if (mOnProgressListener == null) {
+                        mOnProgressListener = new OnLoadProgressListener();
+                    }
+                    downloadService.setOnProgressListener(mOnProgressListener);
 
                     downloadService.setServiceUnBindListener(new ServiceUnBindListener() {
                         @Override
@@ -136,6 +84,22 @@ public final class Updater {
             };
         }
         return conn;
+    }
+
+
+    private void registerNetWorkReceiver() {
+        if (mNetWorkStateChangedReceiver == null) {
+            mNetWorkStateChangedReceiver = new NetWorkStateChangedReceiver();
+        }
+        if (!mNetWorkStateChangedReceiver.isRegister()) {
+            NetWorkStateUtil.registerReceiver(mBuilder.context.getApplicationContext(), mNetWorkStateChangedReceiver);
+        }
+    }
+
+    private void unregisterNetWorkReceiver() {
+        if (mNetWorkStateChangedReceiver != null) {
+            NetWorkStateUtil.unregisterReceiver(mBuilder.context.getApplicationContext(), mNetWorkStateChangedReceiver);
+        }
     }
 
     /**
@@ -162,7 +126,7 @@ public final class Updater {
 
     private int getLocalVersionCode() {
         if (mLocalVersionCode == 0xffff_ffff) {
-            mLocalVersionCode = Utils.getCurrentVersionCode(mBuilder.context);
+            mLocalVersionCode = UpdateHelper.getCurrentVersionCode(mBuilder.context);
         }
         return mLocalVersionCode;
     }
@@ -171,8 +135,7 @@ public final class Updater {
      * 显示进度条对话框。
      */
     private void showProgressDialog() {
-        mProgressDialog = new DefaultDialog(mBuilder.context, mBuilder.loadDialogConfig);
-        mProgressDialog.show();
+        mDefaultDialog.show(mBuilder.loadDialogConfig);
     }
 
     /**
@@ -180,8 +143,8 @@ public final class Updater {
      * @param percentage 当前的百分比。
      */
     private void updateProgressDialog(int percentage) {
-        if (mProgressDialog != null) {
-            mProgressDialog.updateDownLoadsProgress(percentage);
+        if (mDefaultDialog != null) {
+            mDefaultDialog.updateDownLoadsProgress(percentage);
         }
     }
 
@@ -203,25 +166,34 @@ public final class Updater {
     }
 
     /**
-     * 检查更新。
+     * 检查更新。如果当前
      * @param updateInfo 更新信息对象。
      * @param autoInstall 是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
      */
     public void check(UpdateInfo updateInfo, boolean autoInstall) {
-        if (!autoInstall && mBuilder.callback == null) {
+        if (!autoInstall && mCallback == null) {
             throw new IllegalArgumentException("Because you neither set up to monitor installed automatically, so the check update is pointless.");
         }
         if (updateInfo != null && mUpdateInfo != updateInfo) {
+            if (!NetWorkStateUtil.isConnected(mBuilder.context)) {
+                if (mCallback != null) {
+                    mCallback.onCheckCancelled();
+                    mCallback.onCompleted(false, UpdateHelper.getCurrentVersionName(mBuilder.context));
+                }
+                return;
+            }
+            if (TextUtils.isEmpty(updateInfo.getDownLoadsUrl())) {
+                return;
+            }
             mAutoInstall = autoInstall;
             mIsChecked = true;
             mUpdateInfo = updateInfo;
             mBuilder.informDialogConfig.setMsg(updateInfo.getUpdateMessage());
-            mLatestVersionCode = Utils.getApkVersionCodeFromSp(mBuilder.context);
             //如果这个条件满足说明上一次没有安装。有因为即使上一次没有安装最新的版本也有可能超出了上一次下载的版本，所以要在这里判断。
-            if (mLatestVersionCode == updateInfo.getVersionCode() && new File(Utils.getApkPathFromSp(mBuilder.context)).exists()) {
+            if (UpdateHelper.getApkVersionCodeFromSp(mBuilder.context) == updateInfo.getVersionCode() && new File(UpdateHelper.getApkPathFromSp(mBuilder.context)).exists()) {
                 mIsLoaded = true;
             } else {
-                Utils.removeOldApk(mBuilder.context);
+                UpdateHelper.removeOldApk(mBuilder.context);
             }
             if (updateInfo.getVersionCode() > getLocalVersionCode()) {
                 mHaveNewVersion = true;
@@ -235,7 +207,7 @@ public final class Updater {
                 }
             } else {
                 if (mCallback != null) {
-                    mCallback.onCompleted(false, Utils.getCurrentVersionName(mBuilder.context));
+                    mCallback.onCompleted(false, UpdateHelper.getCurrentVersionName(mBuilder.context));
                 }
             }
         }
@@ -245,8 +217,7 @@ public final class Updater {
      * 显示更新提醒。
      */
     private void showUpdateInformDialog() {
-        new DefaultDialog(mBuilder.context, mBuilder.informDialogConfig)
-                .show(new DialogListener() {
+        mDefaultDialog.show(mBuilder.informDialogConfig, new DialogListener() {
                     @Override
                     public void onDialogDismiss(boolean isSure) {
                         respondCheckHandlerResult(isSure);
@@ -271,25 +242,73 @@ public final class Updater {
      */
     private void respondCheckHandlerResult(boolean isContinue) {
         if (isContinue && mHaveNewVersion) {
+            mIsLoaded = false;  // TODO: 2017/7/14 这里是测试代码，后面要删除这一行。
             if (mIsLoaded) {
-                File file = new File(Utils.getApkPathFromSp(mBuilder.context));
+                File file = new File(UpdateHelper.getApkPathFromSp(mBuilder.context));
                 Uri apkPath = Uri.fromFile(file);
                 if (mCallback != null) {
                     mCallback.onLoadSuccess(apkPath, true);
-                    mCallback.onCompleted(true, Utils.getCurrentVersionName(mBuilder.context));
+                    mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mBuilder.context));
                 }
                 if (mAutoInstall) {
-                    Utils.installApk(mBuilder.context, apkPath);
+                    UpdateHelper.installApk(mBuilder.context, apkPath);
                 }
             } else {
-                mBuilder.fileName = getApkName(mUpdateInfo);
-                startDownload(mBuilder.fileName, mUpdateInfo.getDownLoadsUrl(), isForceUpdate(mUpdateInfo), mBuilder.mTitle, mBuilder.mDescription);
+                if (checkCanDownloadable()) {
+                    startDownload();
+                }
             }
         } else {
             if (mCallback != null) {
                 mCallback.onLoadCancelled();
             }
         }
+    }
+
+    private boolean checkCanDownloadable() {
+        registerNetWorkReceiver();  //注册一个网络状态改变的广播接收者。无论网络是否连接成功都要注册，因为下载过程中可能会断网。
+        if (!NetWorkStateUtil.isConnected(mBuilder.context) || !NetWorkStateUtil.isWifiConnected(mBuilder.context)) {
+            showWifiOrMobileUnusableDialog();
+            return false;
+        }
+        return true;
+    }
+
+    private void showWifiOrMobileUnusableDialog() {
+        if (NetWorkStateUtil.isConnected(mBuilder.context)) {
+            showWiFiUnusableDialog();
+        }else {
+            showNetWorkUnusableDialog();
+        }
+    }
+
+    private void showNetWorkUnusableDialog() {
+        mDefaultDialog.showNetWorkUnusableDialog(new DialogListener() {
+            @Override
+            public void onDialogDismiss(boolean isSure) {
+                if (mCallback != null) {
+                    mCallback.onLoadCancelled();
+                }
+            }
+        });
+    }
+
+    private void showWiFiUnusableDialog() {
+        if (wifiUnusableDialogListener == null) {
+            wifiUnusableDialogListener = new DialogListener() {
+                @Override
+                public void onDialogDismiss(boolean isSure) {
+                    if (isSure) {
+                        startDownload();
+                    } else {
+                        if (mCallback != null) {
+                            mCallback.onLoadCancelled();
+                        }
+                    }
+                }
+            };
+        }
+        mDefaultDialog.showWiFiUnusableDialog(wifiUnusableDialogListener);
     }
 
     private String getApkName(@NonNull UpdateInfo updateInfo){
@@ -324,32 +343,31 @@ public final class Updater {
         if (mIsChecked) {  //如果检查更新不是自己检查的就不能调用这个方法。
             throw new IllegalStateException("Because you update the action is completed, so you can't call this method.");
         }
-        if (!autoInstall && mBuilder.callback == null) {
+        if (!autoInstall && mCallback == null) {
             throw new IllegalArgumentException("Because you have neither set up to monitor installed automatically, so the download is pointless.");
         }
-        if (TextUtils.isEmpty(notifyCationTitle)) {
-            notifyCationTitle = "正在下载更新";
+        if (TextUtils.isEmpty(updateInfo.getDownLoadsUrl())) {
+            return;
         }
+        mBuilder.mTitle = TextUtils.isEmpty(notifyCationTitle) ? "正在下载更新" : notifyCationTitle;
+        mBuilder.mDescription = notifyCationDesc;
         mAutoInstall = autoInstall;
         mUpdateInfo = updateInfo;
-        startDownload(getApkName(updateInfo), updateInfo.getDownLoadsUrl(), isForceUpdate(updateInfo), notifyCationTitle, notifyCationDesc);
+        if (checkCanDownloadable()) {
+            startDownload();
+        }
     }
 
     /**
      * 开始下载。
-     * @param apkName apk名称。
-     * @param downLoadsUrl 下载地址。
-     * @param isForceUpdate 是否强制更新。
-     * @param notifyCationTitle 下载过程中通知栏的标题。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
-     * @param notifyCationDesc 下载过程中通知栏的描述。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
      */
-    private void startDownload(@NonNull String apkName, @NonNull String downLoadsUrl, boolean isForceUpdate, CharSequence notifyCationTitle, CharSequence notifyCationDesc) {
+    private void startDownload() {
         mServiceIntent = new Intent(mBuilder.context, DownloadService.class);
-        mServiceIntent.putExtra(DownloadService.KEY_APK_NAME, apkName);
-        mServiceIntent.putExtra(DownloadService.KEY_DOWNLOAD_URL, downLoadsUrl);
-        mServiceIntent.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate);
-        mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_TITLE, notifyCationTitle);
-        mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_DESCRIPTION, notifyCationDesc);
+        mServiceIntent.putExtra(DownloadService.KEY_APK_NAME, getApkName(mUpdateInfo));
+        mServiceIntent.putExtra(DownloadService.KEY_DOWNLOAD_URL, mUpdateInfo.getDownLoadsUrl());
+        mServiceIntent.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate(mUpdateInfo));
+        mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_TITLE, mBuilder.mTitle);
+        mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_DESCRIPTION, mBuilder.mDescription);
 
         mBuilder.context.startService(mServiceIntent);
         isBindService = mBuilder.context.bindService(mServiceIntent, getServiceConnection(), Context.BIND_AUTO_CREATE);
@@ -382,10 +400,6 @@ public final class Updater {
          * 通知栏的描述。
          */
         CharSequence mDescription;
-        /**
-         * APK名称。
-         */
-        String fileName;
         /**
          * 是否没有对话框。
          */
@@ -472,6 +486,120 @@ public final class Updater {
          */
         public Updater builder() {
             return new Updater(this);
+        }
+    }
+
+    private class NetWorkStateChangedReceiver extends NetWorkStateUtil.ConnectivityChangeReceiver {
+        /**
+         * 当链接断开的时候执行。
+         *
+         * @param type             表示当前断开链接的类型，是WiFi还是流量。如果为 {@link ConnectivityManager#TYPE_WIFI} 则说明当前断开链接
+         *                         的是WiFi，如果为 {@link ConnectivityManager#TYPE_MOBILE} 则说明当前断开链接的是流量。
+         */
+        @Override
+        protected void onDisconnected(int type) {
+            DialogListener dialogListener = null;
+            if (mCallback != null) {
+                dialogListener = new DialogListener() {
+                    @Override
+                    public void onDialogDismiss(boolean isSure) {
+                        if (!isBindService) {
+                            mCallback.onCheckCancelled();
+                        }
+                    }
+                };
+            }
+            mDefaultDialog.showNetWorkUnusableDialog(dialogListener);
+        }
+
+        /**
+         * 当链接成功后执行。
+         *
+         * @param type 表示当前链接的类型，是WiFi还是流量。如果为 {@link ConnectivityManager#TYPE_WIFI} 则说明当前链接
+         *             成功的是WiFi，如果为 {@link ConnectivityManager#TYPE_MOBILE} 则说明当前链接成功的是流量。
+         */
+        @Override
+        protected void onConnected(int type) {
+            switch (type) {
+                case ConnectivityManager.TYPE_MOBILE:
+                    if (isBindService) {
+                        showProgressDialog();
+                    } else {
+                        showWiFiUnusableDialog();
+                    }
+                    break;
+                case ConnectivityManager.TYPE_WIFI:
+                    if (isBindService) {
+                        showProgressDialog();
+                    } else {
+                        startDownload();
+                    }
+                    break;
+            }
+        }
+    }
+
+    private class OnLoadProgressListener implements OnProgressListener {
+
+        @Override
+        public void onStartLoad() {
+            if (mCallback != null) {
+                mCallback.onStartLoad();
+            }
+            if (!mBuilder.noDialog) {
+                mBuilder.loadDialogConfig.setForceUpdate(isForceUpdate(mUpdateInfo));
+                showProgressDialog();
+            }
+        }
+
+        @Override
+        public void onProgress(long total, long current, int percentage) {
+            if (percentage == 100 || total == current) {
+                UpdateHelper.putApkVersionCode2Sp(mBuilder.context, mUpdateInfo.getVersionCode());
+            }
+            if (mCallback != null) {
+                mCallback.onProgress(total, current, percentage);
+            }
+            if (!mBuilder.noDialog) {
+                updateProgressDialog(percentage);
+            }
+        }
+
+        @Override
+        public void onLoadSuccess(Uri downUri, boolean isCache) {
+            unregisterNetWorkReceiver();
+            stopService();  //结束服务
+            if (mCallback != null) {
+                mCallback.onLoadSuccess(downUri, isCache);
+                mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mBuilder.context));
+            }
+            if (mAutoInstall) {
+                UpdateHelper.installApk(mBuilder.context, downUri);
+            }
+        }
+
+        @Override
+        public void onLoadFailed() {
+            unregisterNetWorkReceiver();
+            stopService();  //结束服务
+            if (mCallback != null) {
+                mCallback.onLoadFailed();
+                mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mBuilder.context));
+            }
+        }
+
+        @Override
+        public void onLoadPaused() {
+            if (mCallback != null) {
+                mCallback.onLoadPaused();
+            }
+        }
+
+        @Override
+        public void onLoadPending() {
+            if (mCallback != null) {
+                mCallback.onLoadPending();
+            }
         }
     }
 }

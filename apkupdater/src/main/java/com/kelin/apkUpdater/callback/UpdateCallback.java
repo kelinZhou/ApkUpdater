@@ -1,8 +1,8 @@
-package com.chengshi.apkUpdater.callback;
+package com.kelin.apkUpdater.callback;
 
 import android.net.Uri;
 
-import com.chengshi.apkUpdater.Updater;
+import com.kelin.apkUpdater.Updater;
 
 /**
  * 描述 下载文件的回调接口。
@@ -58,7 +58,12 @@ public abstract class UpdateCallback implements OnProgressListener {
     public void onLoadPending() {}
 
     /**
-     * 当下载被取消后调用。即表明用户不想进行本次更新，强制更新是不能取消的。
+     * 检查更新被取消。如果当前设备无网络可用则会执行该方法。
+     */
+    public void onCheckCancelled(){}
+
+    /**
+     * 当下载被取消后调用。即表明用户不想进行本次更新，强制更新一般情况下是不能取消的，除非你设置了需要检查WIFI而WIFI又没有链接。
      */
     public abstract void onLoadCancelled();
 

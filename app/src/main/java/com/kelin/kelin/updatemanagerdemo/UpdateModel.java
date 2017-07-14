@@ -1,9 +1,9 @@
-package com.chengshi.kelin.updatemanagerdemo;
+package com.kelin.kelin.updatemanagerdemo;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.chengshi.apkUpdater.UpdateInfo;
+import com.kelin.apkUpdater.UpdateInfo;
 
 /**
  * 描述 ${TODO}

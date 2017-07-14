@@ -1,11 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.chengshi.apkUpdater">
+          package="com.kelin.apkUpdater">
 
     <application android:allowBackup="true"
                  android:label="@string/app_name"
                  android:supportsRtl="true">
         <!--版本更新服务-->
-        <service android:name="com.chengshi.apkUpdater.DownloadService"/>
+        <service android:name="com.kelin.apkUpdater.DownloadService"/>
     </application>
 
 </manifest>

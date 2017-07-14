@@ -1,4 +1,4 @@
-package com.chengshi.apkUpdater.callback;
+package com.kelin.apkUpdater.callback;
 
 /**
  * 描述 服务被解绑的监听。
