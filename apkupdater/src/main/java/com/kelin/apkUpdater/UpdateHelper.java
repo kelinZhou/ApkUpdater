@@ -9,6 +9,8 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 
+import com.kelin.apkUpdater.util.AssetUtils;
+
 import java.io.File;
 
 
@@ -19,6 +21,10 @@ import java.io.File;
  */
 
 public class UpdateHelper {
+
+    private UpdateHelper() {
+        throw new InstantiationError("Utility class don't need to instantiate！");
+    }
 
     private static final String CONFIG_NAME = "com_kelin_apkUpdater_config";
     /**
@@ -67,7 +73,15 @@ public class UpdateHelper {
      * @param context {@link Activity} 对象。
      * @param apkPath 安装包的路径
      */
-    public static void installApk(Context context, Uri apkPath) {
+    public static boolean installApk(Context context, Uri apkPath) {
+        String path = apkPath.toString();
+        if (path.startsWith("content://")) {
+            String realPath = AssetUtils.getPath(context, apkPath);
+            if (realPath == null) {
+                return false;
+            }
+            apkPath = Uri.fromFile(new File(realPath));
+        }
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_VIEW);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -75,7 +89,10 @@ public class UpdateHelper {
         intent.setDataAndType(apkPath, "application/vnd.android.package-archive");
         context.startActivity(intent);
         android.os.Process.killProcess(android.os.Process.myPid());
+        return true;
     }
+
+
 
     /**
      * 删除上次更新存储在本地的apk

@@ -67,6 +67,11 @@ public abstract class UpdateCallback implements DownloadProgressCallback {
     public abstract void onLoadCancelled();
 
     /**
+     * 如果在安装过程中发生了意外导致安装失败会执行此方法。
+     */
+    public void onInstallFailed() {}
+
+    /**
      * 当任务完毕后被调用。无论任务成功还是失败，也无论是否需要更新。如果在检查更新阶段发现没有新的版本则会直接执行
      * 该方法，如果检查更新失败也会执行该方法，如果检测到了新的版本的话，那么这个方法就不会再检查更新阶段调用，一直
      * 等到下载完成或下载失败之后才会被执行。

@@ -7,12 +7,11 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.v4.net.ConnectivityManagerCompat;
-import android.util.Log;
 
 import java.lang.reflect.Method;
 
 /**
- * 描述 ${TODO}
+ * 描述 网络状态相关的工具类。
  * 创建人 kelin
  * 创建时间 2017/7/12  上午11:03
  * 版本 v 1.0.0
@@ -95,7 +94,6 @@ public class NetWorkStateUtil {
      * 网络改变广播。
      */
     public static abstract class ConnectivityChangeReceiver extends BroadcastReceiver {
-        private static final String TAG = "ConnectivityChangeRecei";
         public static final IntentFilter FILTER = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         private boolean isRegister;
 
@@ -122,17 +120,13 @@ public class NetWorkStateUtil {
                     if (type == ConnectivityManager.TYPE_WIFI && !sIsWifiConnected) {
                         sIsWifiConnected = true;
                         onConnected(ConnectivityManager.TYPE_WIFI);
-                        Log.e(TAG, "当前WiFi连接可用 ");
                     } else if (type == ConnectivityManager.TYPE_MOBILE) {
                         sIsWifiConnected = false;
-                        // connected to the mobile provider's data plan
                         onConnected(ConnectivityManager.TYPE_MOBILE);
-                        Log.e(TAG, "当前移动网络连接可用 ");
                     }
                 } else {
                     sIsWifiConnected = false;
                     if (!isMobileEnabled) {
-                        Log.e(TAG, "-当前没有网络连接，请确保你已经打开网络-");
                         onDisconnected(type);
                     }
                 }

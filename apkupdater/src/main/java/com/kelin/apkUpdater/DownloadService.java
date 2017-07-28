@@ -17,6 +17,7 @@ import android.os.IBinder;
 import android.os.Message;
 
 import com.kelin.apkUpdater.callback.DownloadProgressCallback;
+import com.kelin.apkUpdater.util.AssetUtils;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -84,6 +85,7 @@ public class DownloadService extends Service {
     private boolean mIsLoadFailed;
     private Cursor mCursor;
     private int mLastStatus;
+    private boolean mIsStarted;
 
     @Override
     public void onCreate() {
@@ -126,10 +128,7 @@ public class DownloadService extends Service {
 
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
         int visibility = mIsForceUpdate ? DownloadManager.Request.VISIBILITY_HIDDEN : DownloadManager.Request.VISIBILITY_VISIBLE;
-        request.setTitle(mNotifyTitle)
-                .setDescription(mNotifyDescription)
-                .setNotificationVisibility(visibility)
-                .setDestinationInExternalFilesDir(getApplicationContext(), Environment.DIRECTORY_DOWNLOADS, mApkName);
+        request.setTitle(mNotifyTitle).setDescription(mNotifyDescription).setNotificationVisibility(visibility).setDestinationInExternalFilesDir(getApplicationContext(), Environment.DIRECTORY_DOWNLOADS, mApkName);
         /*将下载请求放入队列， return下载任务的ID*/
         downloadId = downloadManager.enqueue(request);
 
@@ -141,9 +140,7 @@ public class DownloadService extends Service {
      */
     private void registerBroadcast() {
         /*注册service 广播 1.任务完成时 2.进行中的任务被点击*/
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
-        registerReceiver(downLoadBroadcast = new DownLoadBroadcast(), intentFilter);
+        registerReceiver(downLoadBroadcast = new DownLoadBroadcast(), new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
     }
 
     /**
@@ -205,9 +202,7 @@ public class DownloadService extends Service {
      * 通过query查询下载状态，包括已下载数据大小，总大小，下载状态
      */
     private int[] getBytesAndStatus() {
-        int[] bytesAndStatus = new int[]{
-                -1, -1, 0
-        };
+        int[] bytesAndStatus = new int[]{-1, -1, 0};
         if (mCursor == null) {
             DownloadManager.Query query = new DownloadManager.Query().setFilterById(downloadId);
             mCursor = downloadManager.query(query);
@@ -246,14 +241,17 @@ public class DownloadService extends Service {
                                         onProgressListener.onLoadPaused();
                                         break;
                                     case DownloadManager.STATUS_PENDING:
-                                        onProgressListener.onStartLoad();
                                         onProgressListener.onLoadPending();
                                         break;
                                     case DownloadManager.STATUS_RUNNING:
+                                        if (mLastFraction == 0xffff_ffff && !mIsStarted) {
+                                            mIsStarted = true;
+                                            onProgressListener.onStartLoad();
+                                        }
                                     case DownloadManager.STATUS_SUCCESSFUL:
                                         //被除数可以为0，除数必须大于0
                                         if (msg.arg1 >= 0 && msg.arg2 > 0) {
-                                            int fraction = (int) ((msg.arg1 + 0f)  / msg.arg2  * 100);
+                                            int fraction = (int) ((msg.arg1 + 0f) / msg.arg2 * 100);
                                             if (fraction == 0) fraction = 1;
                                             if (mLastFraction != fraction) {
                                                 mLastFraction = fraction;
@@ -291,8 +289,10 @@ public class DownloadService extends Service {
                         Uri downIdUri = downloadManager.getUriForDownloadedFile(downloadId);
 
                         if (downIdUri != null) {
-                            String downIdUriPath = downIdUri.getPath();
-                            UpdateHelper.putApkPath2Sp(getApplicationContext(), downIdUriPath);
+                            String realPath = AssetUtils.getPath(context, downIdUri);
+                            if (realPath != null) {
+                                UpdateHelper.putApkPath2Sp(getApplicationContext(), realPath);
+                            }
                         }
                         updateProgress();
                         downLoadHandler.sendMessage(downLoadHandler.obtainMessage(WHAT_COMPLETED, downIdUri));
@@ -339,6 +339,7 @@ public class DownloadService extends Service {
 
     /**
      * 设置进度更新监听。
+     *
      * @param onProgressListener {@link DownloadProgressCallback} 的实现类对象。
      */
     void setOnProgressListener(DownloadProgressCallback onProgressListener) {
@@ -347,6 +348,7 @@ public class DownloadService extends Service {
 
     /**
      * 设置进度更新监听。
+     *
      * @param serviceUnBindListener {@link ServiceUnBindListener} 的实现类对象。
      */
     void setServiceUnBindListener(ServiceUnBindListener serviceUnBindListener) {

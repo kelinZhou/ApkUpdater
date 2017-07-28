@@ -174,14 +174,10 @@ public final class Updater {
         if (!autoInstall && mCallback == null) {
             throw new IllegalArgumentException("Because you neither set up to monitor installed automatically, so the check update is pointless.");
         }
+        if (!NetWorkStateUtil.isConnected(mApplicationContext)) {
+            return;
+        }
         if (updateInfo != null && mUpdateInfo != updateInfo) {
-            if (!NetWorkStateUtil.isConnected(mApplicationContext)) {
-                if (mCallback != null) {
-                    mCallback.onCheckCancelled();
-                    mCallback.onCompleted(false, UpdateHelper.getCurrentVersionName(mApplicationContext));
-                }
-                return;
-            }
             if (TextUtils.isEmpty(updateInfo.getDownLoadsUrl())) {
                 return;
             }
@@ -237,7 +233,6 @@ public final class Updater {
      */
     private void respondCheckHandlerResult(boolean isContinue) {
         if (isContinue && mHaveNewVersion) {
-            mIsLoaded = false;  // TODO: 2017/7/14 这里是测试代码，后面要删除这一行。
             if (mIsLoaded) {
                 File file = new File(UpdateHelper.getApkPathFromSp(mApplicationContext));
                 Uri apkPath = Uri.fromFile(file);
@@ -246,7 +241,10 @@ public final class Updater {
                     mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
                 }
                 if (mAutoInstall) {
-                    UpdateHelper.installApk(mApplicationContext, apkPath);
+                    boolean installApk = UpdateHelper.installApk(mApplicationContext, apkPath);
+                    if (!installApk && mCallback != null) {
+                        mCallback.onInstallFailed();
+                    }
                 }
             } else {
                 if (checkCanDownloadable()) {

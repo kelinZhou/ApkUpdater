@@ -8,7 +8,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -32,6 +31,13 @@ public class DefaultDialog {
     private TextView mPercentageView;
     private DialogClickListener mOnClickListener;
     private DialogParams mConfig;
+    //为了让进度条走完才销毁。
+    private Runnable mAction = new Runnable() {
+        @Override
+        public void run() {
+            dismiss(mDialog);
+        }
+    };
 
     public DefaultDialog(Context context) {
         mContext = context;
@@ -51,12 +57,8 @@ public class DefaultDialog {
      */
     @SuppressLint("InflateParams")
     public void show(DialogParams config, final DialogListener listener) {
-        if (mWiFiUnusableDialog != null && mWiFiUnusableDialog.isShowing()) {
-            mWiFiUnusableDialog.dismiss();
-        }
-        if (mNetWorkUnusableDialog != null && mNetWorkUnusableDialog.isShowing()) {
-            mNetWorkUnusableDialog.dismiss();
-        }
+        dismiss(mWiFiUnusableDialog);
+        dismiss(mNetWorkUnusableDialog);
         if (mDialog == null || config != mConfig) {
             mConfig = config;
             //构建AlertDialog。
@@ -78,7 +80,7 @@ public class DefaultDialog {
                     builder.setPositiveButton("悄悄的下载", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            mDialog.dismiss();
+                            dismiss(mDialog);
                         }
                     });
                 }
@@ -98,7 +100,6 @@ public class DefaultDialog {
                     .setMessage(config.getMessage());  //设置内容
             mDialog = builder.create();
         }
-        mDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
         mDialog.show();
     }
 
@@ -106,17 +107,13 @@ public class DefaultDialog {
         mProgressBar.setProgress(percentage);
         mPercentageView.setText(String.format(Locale.CHINA, "%d %%", percentage));
         if (percentage == mProgressBar.getMax()) {
-            mDialog.dismiss();
+            mProgressBar.post(mAction);
         }
     }
 
     public void showWiFiUnusableDialog(final DialogListener listener) {
-        if (mNetWorkUnusableDialog != null && mNetWorkUnusableDialog.isShowing()) {
-            mNetWorkUnusableDialog.dismiss();
-        }
-        if (mDialog != null && mDialog.isShowing()) {
-            mDialog.dismiss();
-        }
+        dismiss(mNetWorkUnusableDialog);
+        dismiss(mDialog);
 
         if (listener != null && mOnClickListener == null) {
             mOnClickListener = new DialogClickListener();
@@ -128,19 +125,20 @@ public class DefaultDialog {
                     .setPositiveButton("继续下载", mOnClickListener)
                     .setNegativeButton("稍后下载", mOnClickListener)
                     .create();
-            mWiFiUnusableDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
         }
         mOnClickListener.setListener(listener);
         mWiFiUnusableDialog.show();
     }
 
+    private void dismiss(AlertDialog dialog) {
+        if (dialog != null && dialog.isShowing()) {
+            dialog.dismiss();
+        }
+    }
+
     public void showNetWorkUnusableDialog(final DialogListener listener) {
-        if (mWiFiUnusableDialog != null && mWiFiUnusableDialog.isShowing()) {
-            mWiFiUnusableDialog.dismiss();
-        }
-        if (mDialog != null && mDialog.isShowing()) {
-            mDialog.dismiss();
-        }
+        dismiss(mWiFiUnusableDialog);
+        dismiss(mDialog);
 
         if (listener != null && mOnClickListener == null) {
             mOnClickListener = new DialogClickListener();
@@ -148,7 +146,6 @@ public class DefaultDialog {
 
         if (mNetWorkUnusableDialog == null) {
             mNetWorkUnusableDialog = new AlertDialog.Builder(mContext).setTitle("提示：").setMessage("网络连接已经断开，请稍后再试。").setNegativeButton("确定", mOnClickListener).create();
-            mNetWorkUnusableDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
         }
         mOnClickListener.setListener(listener);
         mNetWorkUnusableDialog.show();

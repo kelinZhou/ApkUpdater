@@ -21,7 +21,7 @@ allprojects {
 ###### 第二步：添加这个依赖。
 ```
 dependencies {
-    compile 'com.github.kelinZhou:ApkUpdater:1.1.0'
+    compile 'com.github.kelinZhou:ApkUpdater:1.2.0'
 }
 ```
 
@@ -90,14 +90,15 @@ public interface UpdateInfo {
 
 |方法名|说明|
 |-----|------|
-|```public Builder setCallback(UpdateCallback callback)```|设置监听对象。|
-|```public Builder setCheckDialogTitle(CharSequence title)```|配置检查更新时对话框的标题。|
-|```public Builder setDownloadDialogTitle(CharSequence title)```|配置下载更新时对话框的标题。|
-|```public Builder setDownloadDialogMessage(String message)```|配置下载更新时对话框的消息。|
-|```public Builder setNotifyTitle(CharSequence title)```|设置通知栏的标题。（强制更新时是没有通知栏通知的。）|
-|```public Builder setNotifyDescription(CharSequence description)```|设置通知栏的描述。（强制更新时是没有通知栏通知的。）|
-|```public Builder setNoDialog()```|如果你希望自己创建对话框，而不使用默认提供的对话框，可以调用该方法将默认的对话框关闭。如果你关闭了默认的对话框的话就必须自己实现UI交互，并且在用户更新提示做出反应的时候调用 ```updater.setCheckHandlerResult(boolean)``` 方法。实现UI交互的时机都在回调中。|
-|```public Updater builder()```|完成**Updater**对象的构建。|
+|public Builder setCallback(UpdateCallback callback)|设置监听对象。|
+|public Builder setCheckDialogTitle(CharSequence title)|配置检查更新时对话框的标题。|
+|public Builder setDownloadDialogTitle(CharSequence title)|配置下载更新时对话框的标题。|
+|public Builder setDownloadDialogMessage(String message)|配置下载更新时对话框的消息。|
+|public Builder setNotifyTitle(CharSequence title)|设置通知栏的标题。（强制更新时是没有通知栏通知的。）|
+|public Builder setNotifyDescription(CharSequence description)|设置通知栏的描述。（强制更新时是没有通知栏通知的。）|
+|public Builder setNoDialog()|如果你希望自己创建对话框，而不使用默认提供的对话框，可以调用该方法将默认的对话框关闭。如果你关闭了默认的对话框的话就必须自己实现UI交互，并且在用户更新提示做出反应的时候调用 ```updater.setCheckHandlerResult(boolean)``` 方法。实现UI交互的时机都在回调中。|
+|public Builder setCheckWiFiState(boolean check)|设置不检查WiFi状态，默认是检查WiFi状态的，也就是说如果在下载更新的时候如果没有链接WiFi的话默认是会提示用户的。但是如果你不希望给予提示，就可以通过调用此方法，禁用WiFi检查。|
+|public Updater builder()|完成**Updater**对象的构建。|
 ###### 检查更新
 检查更新的代码如下：
 ````
@@ -105,14 +106,24 @@ private void checkUpdate(UpdateModel updateModel) {
     new Updater.Builder(MainActivity.this).builder().check(updateModel);
 }
 ````
+Updater的check方法除了```public void check(UpdateInfo updateInfo)```还有另外一个重载，```public void check(UpdateInfo updateInfo, boolean autoInstall)```autoInstall参数是指要不要自动安装，如果你只是想下载一个apk文件而不希望立即安装的话则可以将该参数置为false。
 ###### 开始下载
 如果你调用了检查更新的方法这一步是**不需要你手动调用的**，但是如果你只是单纯的想利用API做下载Apk的动作就可以通过此方法执行，代码如下：
 ```
-new Updater.Builder(MainActivity.this).builder().download(updateModel, null, null);
+new Updater.Builder(MainActivity.this).builder().download(updateModel);
 ```
-###### 安装APK
-安装是不许要你关心的，下载完成后会自动进入安装页面。
+与检查更新**check()**方法一样，download方法也提供了重载，所有方法如下：
 
+|方法名|说明|
+|-----|-----|
+|public void download(@NonNull UpdateInfo updateInfo)|开始下载。updateInfo：更新信息对象。|
+|public void download(@NonNull UpdateInfo updateInfo, boolean autoInstall)|updateInfo：更新信息对象。autoInstall：是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。|
+|public void download(@NonNull UpdateInfo updateInfo, CharSequence notifyCationTitle, CharSequence notifyCationDesc, boolean autoInstall)|updateInfo：更新信息对象。notifyCationTitle：下载过程中通知栏的标题。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。notifyCationDesc：下载过程中通知栏的描述。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。autoInstall：是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。|
+###### 安装APK
+安装是不许要你关心的，下载完成后会自动进入安装页面。除非你禁用了自动安装，或是以想安装一个现有的Apk。如果是这样的话你可以使用**UpdateHelper**的```public static void installApk(Context context, Uri apkPath)```方法。
+
+###### 其他
+该项目中提供了两个工具类：UpdateHelper 和 NetWorkStateUtil。
 
 * * *
 ### License

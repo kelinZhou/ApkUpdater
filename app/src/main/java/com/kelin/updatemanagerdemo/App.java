@@ -1,4 +1,4 @@
-package com.kelin.kelin.updatemanagerdemo;
+package com.kelin.updatemanagerdemo;
 
 import android.app.Application;
 
