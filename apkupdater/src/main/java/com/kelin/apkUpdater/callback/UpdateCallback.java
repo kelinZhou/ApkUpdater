@@ -1,8 +1,8 @@
 package com.kelin.apkUpdater.callback;
 
-import android.net.Uri;
-
 import com.kelin.apkUpdater.Updater;
+
+import java.io.File;
 
 /**
  * 描述 下载文件的回调接口。
@@ -32,11 +32,11 @@ public abstract class UpdateCallback implements DownloadProgressCallback {
     /**
      * 下载完成。
      *
-     * @param downUri 已经下载好的APK存储地址。
+     * @param apkFile 已经下载好的APK文件对象。
      * @param isCache 是否是缓存，如果改参数为true说明本次并没有真正的执行下载任务，因为上一次用户下载完毕后并没有进行
      */
     @Override
-    public void onLoadSuccess(Uri downUri, boolean isCache) {}
+    public void onLoadSuccess(File apkFile, boolean isCache) {}
 
     /**
      * 当下载失败的时候调用。

@@ -6,10 +6,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.net.ConnectivityManager;
-import android.net.Uri;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
+
 import com.kelin.apkUpdater.callback.DownloadProgressCallback;
 import com.kelin.apkUpdater.callback.UpdateCallback;
 import com.kelin.apkUpdater.dialog.DefaultDialog;
@@ -234,14 +234,13 @@ public final class Updater {
     private void respondCheckHandlerResult(boolean isContinue) {
         if (isContinue && mHaveNewVersion) {
             if (mIsLoaded) {
-                File file = new File(UpdateHelper.getApkPathFromSp(mApplicationContext));
-                Uri apkPath = Uri.fromFile(file);
+                File apkFile = new File(UpdateHelper.getApkPathFromSp(mApplicationContext));
                 if (mCallback != null) {
-                    mCallback.onLoadSuccess(apkPath, true);
+                    mCallback.onLoadSuccess(apkFile, true);
                     mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
                 }
                 if (mAutoInstall) {
-                    boolean installApk = UpdateHelper.installApk(mApplicationContext, apkPath);
+                    boolean installApk = UpdateHelper.installApk(mApplicationContext, apkFile);
                     if (!installApk && mCallback != null) {
                         mCallback.onInstallFailed();
                     }
@@ -546,15 +545,15 @@ public final class Updater {
         }
 
         @Override
-        public void onLoadSuccess(Uri downUri, boolean isCache) {
+        public void onLoadSuccess(File apkFile, boolean isCache) {
             unregisterNetWorkReceiver();
             stopService();  //结束服务
             if (mCallback != null) {
-                mCallback.onLoadSuccess(downUri, isCache);
+                mCallback.onLoadSuccess(apkFile, isCache);
                 mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
             }
             if (mAutoInstall) {
-                UpdateHelper.installApk(mApplicationContext, downUri);
+                UpdateHelper.installApk(mApplicationContext, apkFile);
             }
         }
 

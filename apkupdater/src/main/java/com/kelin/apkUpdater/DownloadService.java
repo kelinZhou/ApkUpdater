@@ -19,6 +19,7 @@ import android.os.Message;
 import com.kelin.apkUpdater.callback.DownloadProgressCallback;
 import com.kelin.apkUpdater.util.AssetUtils;
 
+import java.io.File;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -265,8 +266,8 @@ public class DownloadService extends Service {
 
                         case WHAT_COMPLETED:
                             if (!mIsLoadFailed) {
-                                Uri downUri = (Uri) msg.obj;
-                                onProgressListener.onLoadSuccess(downUri, false);
+                                File apkFile = (File) msg.obj;
+                                onProgressListener.onLoadSuccess(apkFile, false);
                             }
                             break;
                     }
@@ -286,16 +287,14 @@ public class DownloadService extends Service {
             switch (intent.getAction()) {
                 case DownloadManager.ACTION_DOWNLOAD_COMPLETE:
                     if (downloadId == downId && downId != -1 && downloadManager != null) {
-                        Uri downIdUri = downloadManager.getUriForDownloadedFile(downloadId);
+                        File apkFile = AssetUtils.queryDownloadedApk(downloadId, downloadManager);
 
-                        if (downIdUri != null) {
-                            String realPath = AssetUtils.getPath(context, downIdUri);
-                            if (realPath != null) {
-                                UpdateHelper.putApkPath2Sp(getApplicationContext(), realPath);
-                            }
+                        if (apkFile != null && apkFile.exists()) {
+                            String realPath = apkFile.getAbsolutePath();
+                            UpdateHelper.putApkPath2Sp(getApplicationContext(), realPath);
                         }
                         updateProgress();
-                        downLoadHandler.sendMessage(downLoadHandler.obtainMessage(WHAT_COMPLETED, downIdUri));
+                        downLoadHandler.sendMessage(downLoadHandler.obtainMessage(WHAT_COMPLETED, apkFile));
                     }
                     break;
             }

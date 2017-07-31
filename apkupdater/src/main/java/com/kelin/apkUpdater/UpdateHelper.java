@@ -9,8 +9,6 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 
-import com.kelin.apkUpdater.util.AssetUtils;
-
 import java.io.File;
 
 
@@ -71,22 +69,18 @@ public class UpdateHelper {
     /**
      * 安装APK
      * @param context {@link Activity} 对象。
-     * @param apkPath 安装包的路径
+     * @param apkFile 安装包的路径
      */
-    public static boolean installApk(Context context, Uri apkPath) {
-        String path = apkPath.toString();
-        if (path.startsWith("content://")) {
-            String realPath = AssetUtils.getPath(context, apkPath);
-            if (realPath == null) {
-                return false;
-            }
-            apkPath = Uri.fromFile(new File(realPath));
+    public static boolean installApk(Context context, File apkFile) {
+        if (apkFile == null || !apkFile.exists()) {
+            return false;
         }
+        Uri uri = Uri.fromFile(apkFile);
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_VIEW);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addCategory("android.intent.category.DEFAULT");
-        intent.setDataAndType(apkPath, "application/vnd.android.package-archive");
+        intent.setDataAndType(uri, "application/vnd.android.package-archive");
         context.startActivity(intent);
         android.os.Process.killProcess(android.os.Process.myPid());
         return true;

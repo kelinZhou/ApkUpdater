@@ -1,6 +1,5 @@
 package com.kelin.updatemanagerdemo;
 
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -9,6 +8,8 @@ import android.widget.Toast;
 
 import com.kelin.apkUpdater.Updater;
 import com.kelin.apkUpdater.callback.UpdateCallback;
+
+import java.io.File;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -58,12 +59,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         /**
          * 下载完成。
          *
-         * @param downUri 已经下载好的APK存储地址。
+         * @param apkFile 已经下载好的APK文件对象。
          * @param isCache 是否是缓存，如果改参数为true说明本次并没有真正的执行下载任务，因为上一次用户下载完毕后并没有进行
          */
         @Override
-        public void onLoadSuccess(Uri downUri, boolean isCache) {
-            Log.i(TAG, "onLoadSuccess: 下载成功：downUri=" + downUri + "|是否是缓存？" + (isCache ? "是" : "否"));
+        public void onLoadSuccess(File apkFile, boolean isCache) {
+            Log.i(TAG, "onLoadSuccess: 下载成功：downUri=" + apkFile + "|是否是缓存？" + (isCache ? "是" : "否"));
         }
 
         /**

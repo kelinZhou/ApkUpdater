@@ -1,5 +1,6 @@
 package com.kelin.apkUpdater.util;
 
+import android.app.DownloadManager;
 import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
@@ -9,8 +10,9 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 
+import java.io.File;
+
 /**
- * 描述 ${TODO}
  * 创建人 kelin
  * 创建时间 2017/7/28  下午4:06
  * 版本 v 1.0.0
@@ -21,7 +23,7 @@ public class AssetUtils {
      * @param uri The Uri to check.
      * @return Whether the Uri authority is ExternalStorageProvider.
      */
-    public static boolean isExternalStorageDocument(Uri uri) {
+    private static boolean isExternalStorageDocument(Uri uri) {
         return "com.android.externalstorage.documents".equals(uri.getAuthority());
     }
 
@@ -29,7 +31,7 @@ public class AssetUtils {
      * @param uri The Uri to check.
      * @return Whether the Uri authority is DownloadsProvider.
      */
-    public static boolean isDownloadsDocument(Uri uri) {
+    private static boolean isDownloadsDocument(Uri uri) {
         return "com.android.providers.downloads.documents".equals(uri.getAuthority());
     }
 
@@ -37,27 +39,55 @@ public class AssetUtils {
      * @param uri The Uri to check.
      * @return Whether the Uri authority is MediaProvider.
      */
-    public static boolean isMediaDocument(Uri uri) {
+    private static boolean isMediaDocument(Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
+    }
+
+    public static boolean deleteFileWithPath(String filePath) {
+        SecurityManager checker = new SecurityManager();
+        File f = new File(filePath);
+        checker.checkDelete(filePath);
+        return f.isFile() && f.delete();
+    }
+
+    /**
+     * 获取下载文件
+     */
+    public static File queryDownloadedApk(long downloadId, DownloadManager downloadManager) {
+        File targetApkFile = null;
+        if (downloadId != -1) {
+            DownloadManager.Query query = new DownloadManager.Query();
+            query.setFilterById(downloadId);
+            query.setFilterByStatus(DownloadManager.STATUS_SUCCESSFUL);
+            Cursor cur = downloadManager.query(query);
+            if (cur != null) {
+                if (cur.moveToFirst()) {
+                    String uriString = cur.getString(cur.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI));
+                    targetApkFile = new File(Uri.parse(uriString).getPath());
+                }
+                cur.close();
+            }
+        }
+        return targetApkFile;
     }
 
 
     /**
      * ThumbnailUtils
-     *
+     * <p>
      * Get a file path from a Uri. This will get the the path for Storage Access Framework
      * Documents, as well as the _data field for the MediaStore and other file-based
      * ContentProviders.
      *
      * @param context The context.
      * @param uri     The Uri to query.
-     * @author paulburke
      */
     public static String getPath(final Context context, final Uri uri) {
 
 
         // DocumentProvider
         if (Build.VERSION.SDK_INT >= 19 && DocumentsContract.isDocumentUri(context, uri)) {
+            // ExternalStorageProvider
             if (isExternalStorageDocument(uri)) {
                 final String docId = DocumentsContract.getDocumentId(uri);
                 final String[] split = docId.split(":");
@@ -73,7 +103,8 @@ public class AssetUtils {
             else if (isDownloadsDocument(uri)) {
 
                 final String id = DocumentsContract.getDocumentId(uri);
-                final Uri contentUri = ContentUris.withAppendedId(Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
+                final Uri contentUri = ContentUris.withAppendedId(
+                        Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
 
                 return getDataColumn(context, contentUri, null, null);
             }
@@ -93,17 +124,22 @@ public class AssetUtils {
                 }
 
                 final String selection = "_id=?";
-                final String[] selectionArgs = new String[]{split[1]};
+                final String[] selectionArgs = new String[]{
+                        split[1]
+                };
 
                 return getDataColumn(context, contentUri, selection, selectionArgs);
             }
-        } else {
-            if ("content".equalsIgnoreCase(uri.getScheme())) {
-                return getDataColumn(context, uri, null, null);
-            } else if ("file".equalsIgnoreCase(uri.getScheme())) {
-                return uri.getPath();
-            }
         }
+        // MediaStore (and general)
+        else if ("content".equalsIgnoreCase(uri.getScheme())) {
+            return getDataColumn(context, uri, null, null);
+        }
+        // File
+        else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            return uri.getPath();
+        }
+
         return null;
     }
 
@@ -118,8 +154,7 @@ public class AssetUtils {
      * @param selectionArgs (Optional) Selection arguments used in the query.
      * @return The value of the _data column, which is typically a file path.
      */
-    public static String getDataColumn(Context context, Uri uri, String selection,
-                                       String[] selectionArgs) {
+    private static String getDataColumn(Context context, Uri uri, String selection, String[] selectionArgs) {
 
         Cursor cursor = null;
         final String column = MediaStore.Images.Media.DATA;
