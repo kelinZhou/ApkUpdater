@@ -2,6 +2,11 @@
 基于DownLoadManager实现安装包更新，安装包缓存，支持断点续传，自定义UI，提供了默认UI。
 
 * * *
+## 历史版本：
+4. 1.2.2 版本：进行了部分优化。
+3. 1.2.1 版本：修复了部分机型会出现软件解析包错误的bug，并增加了网络状态的监听，根据当前的网络状态给出友好的提示，也可手动关闭网络监测。
+2. 1.0.1 版本：支持指定版本强制更新。
+1. 1.0.0 版本：支持强制更新配置，断点下载，自动恢复。
 
 ## 演示
 按照惯例还是先上图吧。从图片中你可以看出apk是做了缓存的，也就是下载完成后如果没有安装下次再次检查更新时如果发现服务端的版本和缓存的版本一致则会跳过下载。
@@ -21,7 +26,7 @@ allprojects {
 ###### 第二步：添加这个依赖。
 ```
 dependencies {
-    compile 'com.github.kelinZhou:ApkUpdater:1.2.0'
+    compile 'com.github.kelinZhou:ApkUpdater:1.2.2'
 }
 ```
 
@@ -120,7 +125,7 @@ new Updater.Builder(MainActivity.this).builder().download(updateModel);
 |public void download(@NonNull UpdateInfo updateInfo, boolean autoInstall)|updateInfo：更新信息对象。autoInstall：是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。|
 |public void download(@NonNull UpdateInfo updateInfo, CharSequence notifyCationTitle, CharSequence notifyCationDesc, boolean autoInstall)|updateInfo：更新信息对象。notifyCationTitle：下载过程中通知栏的标题。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。notifyCationDesc：下载过程中通知栏的描述。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。autoInstall：是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。|
 ###### 安装APK
-安装是不许要你关心的，下载完成后会自动进入安装页面。除非你禁用了自动安装，或是以想安装一个现有的Apk。如果是这样的话你可以使用**UpdateHelper**的```public static void installApk(Context context, Uri apkPath)```方法。
+安装是不许要你关心的，下载完成后会自动进入安装页面。除非你禁用了自动安装，或是想安装一个现有的Apk。如果是这样的话你可以使用**UpdateHelper**的```public static void installApk(Context context, File apkFile)```方法。
 
 ###### 其他
 该项目中提供了两个工具类：UpdateHelper 和 NetWorkStateUtil。
