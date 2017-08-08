@@ -21,8 +21,8 @@
                 <gradient
                     android:angle="270"
                     android:centerY="0.75"
-                    android:endColor="?colorPrimary"
-                    android:startColor="?colorPrimary"/>
+                    android:endColor="@color/colorPrimary"
+                    android:startColor="@color/colorPrimary"/>
             </shape>
              
         </clip>
@@ -36,8 +36,8 @@
                 <gradient
                     android:angle="270"
                     android:centerY="0.75"
-                    android:endColor="?colorPrimary"
-                    android:startColor="?colorPrimary"/>
+                    android:endColor="@color/colorPrimary"
+                    android:startColor="@color/colorPrimary"/>
             </shape>
              
         </clip>
