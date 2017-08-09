@@ -130,6 +130,16 @@ public class DefaultDialog {
         mWiFiUnusableDialog.show();
     }
 
+    public void dismissAll() {
+        if (mDialog != null) {
+            dismiss(mDialog);
+        } else if (mNetWorkUnusableDialog != null) {
+            dismiss(mNetWorkUnusableDialog);
+        } else if (mWiFiUnusableDialog != null) {
+            dismiss(mWiFiUnusableDialog);
+        }
+    }
+
     private void dismiss(AlertDialog dialog) {
         if (dialog != null && dialog.isShowing()) {
             dialog.dismiss();

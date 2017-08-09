@@ -1,6 +1,5 @@
 package com.kelin.updatemanagerdemo;
 
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.kelin.apkUpdater.UpdateInfo;
@@ -20,12 +19,12 @@ public class UpdateModel implements UpdateInfo {
 
     @Override
     public String getDownLoadsUrl() {
-        return "http://update.useonline.cn/api/package/file/f9403985-7858-4d7d-ac66-dfce72f50cf0";
+        return "http://sdk.useonline.cn/platform_sdk/dev/app-use-com.chengshi.app.platform.pricing-release.apk";
     }
 
     @Override
     public boolean isForceUpdate() {
-        return false;
+        return true;
     }
 
     /**
@@ -41,10 +40,10 @@ public class UpdateModel implements UpdateInfo {
         return null;
     }
 
-    @NonNull
+    @Nullable
     @Override
     public String getApkName() {
-        return "app-debug.apk";
+        return null;
     }
 
     @Override

@@ -9,6 +9,7 @@ import android.net.ConnectivityManager;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
+import android.widget.Toast;
 
 import com.kelin.apkUpdater.callback.DownloadProgressCallback;
 import com.kelin.apkUpdater.callback.UpdateCallback;
@@ -20,6 +21,7 @@ import com.kelin.apkUpdater.util.NetWorkStateUtil;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * 描述 用来更新APK的核心类。
@@ -184,6 +186,7 @@ public final class Updater {
             mAutoInstall = autoInstall;
             mIsChecked = true;
             mUpdateInfo = updateInfo;
+            mBuilder.loadDialogConfig.setForceUpdate(isForceUpdate(updateInfo));
             mBuilder.informDialogConfig.setMsg(updateInfo.getUpdateMessage());
             //如果这个条件满足说明上一次没有安装。有因为即使上一次没有安装最新的版本也有可能超出了上一次下载的版本，所以要在这里判断。
             if (UpdateHelper.getApkVersionCodeFromSp(mApplicationContext) == updateInfo.getVersionCode() && new File(UpdateHelper.getApkPathFromSp(mApplicationContext)).exists()) {
@@ -324,6 +327,7 @@ public final class Updater {
         mBuilder.mDescription = notifyCationDesc;
         mAutoInstall = autoInstall;
         mUpdateInfo = updateInfo;
+        mBuilder.loadDialogConfig.setForceUpdate(isForceUpdate(updateInfo));
         if (checkCanDownloadable()) {
             startDownload();
         }
@@ -350,7 +354,8 @@ public final class Updater {
      * @return 返回一个以 "包名+日期" 命名的Apk名称。
      */
     private String getDefaultApkName() {
-        String formatDate = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT).format(new Date());
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-M-d", Locale.CHINA);
+        String formatDate = format.format(new Date());
         return mApplicationContext.getPackageName() + formatDate + ".apk";
     }
 
@@ -526,7 +531,6 @@ public final class Updater {
                 mCallback.onStartLoad();
             }
             if (!mBuilder.noDialog) {
-                mBuilder.loadDialogConfig.setForceUpdate(isForceUpdate(mUpdateInfo));
                 showProgressDialog();
             }
         }
@@ -561,6 +565,8 @@ public final class Updater {
         public void onLoadFailed() {
             unregisterNetWorkReceiver();
             stopService();  //结束服务
+            mDefaultDialog.dismissAll();
+            Toast.makeText(mApplicationContext, "sorry, 跟新失败了~", Toast.LENGTH_SHORT).show();
             if (mCallback != null) {
                 mCallback.onLoadFailed();
                 mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
