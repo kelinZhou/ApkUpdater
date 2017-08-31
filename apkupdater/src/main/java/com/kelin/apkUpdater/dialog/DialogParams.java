@@ -1,6 +1,7 @@
 package com.kelin.apkUpdater.dialog;
 
 import android.support.annotation.DrawableRes;
+import android.support.annotation.StyleRes;
 import android.text.TextUtils;
 
 /**
@@ -16,6 +17,8 @@ abstract class DialogParams {
     protected int icon;
     protected CharSequence title;
     CharSequence msg;
+    @StyleRes
+    protected static int sStyle;
 
     private boolean isForceUpdate;
 
@@ -40,6 +43,15 @@ abstract class DialogParams {
             return;
         }
         this.title = title;
+    }
+
+    public static void setStyle(@StyleRes int style) {
+        sStyle = style;
+    }
+
+    @StyleRes
+    public static int getStyle() {
+        return sStyle;
     }
 
     public void setMsg(CharSequence msg) {

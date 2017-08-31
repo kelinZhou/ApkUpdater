@@ -10,9 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
 import com.kelin.apkUpdater.R;
-
 import java.util.Locale;
 
 /**
@@ -62,7 +60,7 @@ public class DefaultDialog {
         if (mDialog == null || config != mConfig) {
             mConfig = config;
             //构建AlertDialog。
-            AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+            AlertDialog.Builder builder = new AlertDialog.Builder(mContext, DialogParams.getStyle());
             builder.setCancelable(false);
             if (config instanceof DownloadDialogParams) {
                 View contentView = LayoutInflater.from(mContext).inflate(R.layout.com_cheng_shi_layout_progress_layout, null);
@@ -119,7 +117,7 @@ public class DefaultDialog {
             mOnClickListener = new DialogClickListener();
         }
         if (mWiFiUnusableDialog == null) {
-            mWiFiUnusableDialog = new AlertDialog.Builder(mContext)
+            mWiFiUnusableDialog = new AlertDialog.Builder(mContext, DialogParams.getStyle())
                     .setTitle("提示：")
                     .setMessage("当前为非WiFi网络，是否继续下载？")
                     .setPositiveButton("继续下载", mOnClickListener)
@@ -155,7 +153,11 @@ public class DefaultDialog {
         }
 
         if (mNetWorkUnusableDialog == null) {
-            mNetWorkUnusableDialog = new AlertDialog.Builder(mContext).setTitle("提示：").setMessage("网络连接已经断开，请稍后再试。").setNegativeButton("确定", mOnClickListener).create();
+            mNetWorkUnusableDialog = new AlertDialog.Builder(mContext, DialogParams.getStyle())
+                    .setTitle("提示：")
+                    .setMessage("网络连接已经断开，请稍后再试。")
+                    .setNegativeButton("确定", mOnClickListener)
+                    .create();
         }
         mOnClickListener.setListener(listener);
         mNetWorkUnusableDialog.show();

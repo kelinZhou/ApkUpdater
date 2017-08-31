@@ -8,16 +8,15 @@ import android.content.ServiceConnection;
 import android.net.ConnectivityManager;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
+import android.support.annotation.StyleRes;
 import android.text.TextUtils;
 import android.widget.Toast;
-
 import com.kelin.apkUpdater.callback.DownloadProgressCallback;
 import com.kelin.apkUpdater.callback.UpdateCallback;
 import com.kelin.apkUpdater.dialog.DefaultDialog;
 import com.kelin.apkUpdater.dialog.DownloadDialogParams;
 import com.kelin.apkUpdater.dialog.InformDialogParams;
 import com.kelin.apkUpdater.util.NetWorkStateUtil;
-
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -82,7 +81,8 @@ public final class Updater {
                 }
 
                 @Override
-                public void onServiceDisconnected(ComponentName name) {}
+                public void onServiceDisconnected(ComponentName name) {
+                }
             };
         }
         return conn;
@@ -106,6 +106,7 @@ public final class Updater {
 
     /**
      * 判断当前版本是否是强制更新。
+     *
      * @return 如果是返回true，否则返回false。
      */
     private boolean isForceUpdate(@NonNull UpdateInfo updateInfo) {
@@ -142,6 +143,7 @@ public final class Updater {
 
     /**
      * 更新进度条对话框进度。
+     *
      * @param percentage 当前的百分比。
      */
     private void updateProgressDialog(int percentage) {
@@ -161,6 +163,7 @@ public final class Updater {
 
     /**
      * 检查更新并自动安装。
+     *
      * @param updateInfo 更新信息对象。
      */
     public void check(UpdateInfo updateInfo) {
@@ -169,7 +172,8 @@ public final class Updater {
 
     /**
      * 检查更新。如果当前
-     * @param updateInfo 更新信息对象。
+     *
+     * @param updateInfo  更新信息对象。
      * @param autoInstall 是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
      */
     public void check(UpdateInfo updateInfo, boolean autoInstall) {
@@ -221,6 +225,7 @@ public final class Updater {
 
     /**
      * 设置检查更新的对话框的操作结果。如果你没有关闭默认的对话框使用自定义对话框的话请不要手动调用该方法。
+     *
      * @param isContinue 是否继续，如果继续则说明统一更新，否则就是不统一更新。
      */
     public void setCheckHandlerResult(boolean isContinue) {
@@ -232,6 +237,7 @@ public final class Updater {
 
     /**
      * 响应检查更新的对话框的操作结果。如果你没有关闭默认的对话框使用自定义对话框的话请不要手动调用该方法。
+     *
      * @param isContinue 是否继续，如果继续则说明统一更新，否则就是不统一更新。
      */
     private void respondCheckHandlerResult(boolean isContinue) {
@@ -272,7 +278,7 @@ public final class Updater {
     private void showWifiOrMobileUnusableDialog() {
         if (NetWorkStateUtil.isConnected(mApplicationContext)) {
             showWiFiUnusableDialog();
-        }else {
+        } else {
             showNetWorkUnusableDialog();
         }
     }
@@ -285,12 +291,13 @@ public final class Updater {
         mDefaultDialog.showWiFiUnusableDialog(mDialogListener.changeState(DefaultDialogListener.STATE_WIFI_UNUSABLE));
     }
 
-    private String getApkName(@NonNull UpdateInfo updateInfo){
+    private String getApkName(@NonNull UpdateInfo updateInfo) {
         return TextUtils.isEmpty(updateInfo.getApkName()) ? getDefaultApkName() : updateInfo.getApkName();
     }
 
     /**
      * 开始下载。
+     *
      * @param updateInfo 更新信息对象。
      */
     public void download(@NonNull UpdateInfo updateInfo) {
@@ -299,7 +306,8 @@ public final class Updater {
 
     /**
      * 开始下载。
-     * @param updateInfo 更新信息对象。
+     *
+     * @param updateInfo  更新信息对象。
      * @param autoInstall 是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
      */
     public void download(@NonNull UpdateInfo updateInfo, boolean autoInstall) {
@@ -308,10 +316,11 @@ public final class Updater {
 
     /**
      * 开始下载。
-     * @param updateInfo 更新信息对象。
+     *
+     * @param updateInfo        更新信息对象。
      * @param notifyCationTitle 下载过程中通知栏的标题。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
-     * @param notifyCationDesc 下载过程中通知栏的描述。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
-     * @param autoInstall 是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
+     * @param notifyCationDesc  下载过程中通知栏的描述。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
+     * @param autoInstall       是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
      */
     public void download(@NonNull UpdateInfo updateInfo, CharSequence notifyCationTitle, CharSequence notifyCationDesc, boolean autoInstall) {
         if (mIsChecked) {  //如果检查更新不是自己检查的就不能调用这个方法。
@@ -400,6 +409,16 @@ public final class Updater {
         }
 
         /**
+         * 设置Dialog的样式。
+         *
+         * @param style 要设置的样式的资源ID。
+         */
+        public Builder setDialogTheme(@StyleRes int style) {
+            InformDialogParams.setStyle(style);
+            return this;
+        }
+
+        /**
          * 配置检查更新时对话框的标题。
          *
          * @param title 对话框的标题。
@@ -449,7 +468,7 @@ public final class Updater {
         }
 
         /**
-         * 如果你希望自己创建对话框，而不适用默认提供的对话框，可以调用该方法将默认的对话框关闭。
+         * 如果你希望自己创建对话框，而不使用默认提供的对话框，可以调用该方法将默认的对话框关闭。
          * 如果你关闭了默认的对话框的话就必须自己实现UI交互，并且在用户更新提示做出反应的时候调用
          * {@link #setCheckHandlerResult(boolean)} 方法。
          */
@@ -461,6 +480,7 @@ public final class Updater {
         /**
          * 设置不检查WiFi状态，默认是检查WiFi状态的，也就是说如果在下载更新的时候如果没有链接WiFi的话默认是会提示用户的。
          * 但是如果你不希望给予提示，就可以通过调用此方法，禁用WiFi检查。
+         *
          * @param check 是否检测WiFi连接状态，true表示检测，false表示不检测。默认检测。
          */
         public Builder setCheckWiFiState(boolean check) {
@@ -482,8 +502,8 @@ public final class Updater {
         /**
          * 当链接断开的时候执行。
          *
-         * @param type             表示当前断开链接的类型，是WiFi还是流量。如果为 {@link ConnectivityManager#TYPE_WIFI} 则说明当前断开链接
-         *                         的是WiFi，如果为 {@link ConnectivityManager#TYPE_MOBILE} 则说明当前断开链接的是流量。
+         * @param type 表示当前断开链接的类型，是WiFi还是流量。如果为 {@link ConnectivityManager#TYPE_WIFI} 则说明当前断开链接
+         *             的是WiFi，如果为 {@link ConnectivityManager#TYPE_MOBILE} 则说明当前断开链接的是流量。
          */
         @Override
         protected void onDisconnected(int type) {
@@ -609,6 +629,7 @@ public final class Updater {
 
         /**
          * 改变状态。
+         *
          * @param currentState 要改变新状态。
          * @return 返回 DefaultDialogListener 本身。
          */
