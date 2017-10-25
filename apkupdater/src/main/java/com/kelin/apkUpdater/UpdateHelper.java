@@ -7,7 +7,11 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.v4.content.FileProvider;
+import android.webkit.MimeTypeMap;
+import android.widget.Toast;
 
 import java.io.File;
 
@@ -75,18 +79,34 @@ public class UpdateHelper {
         if (apkFile == null || !apkFile.exists()) {
             return false;
         }
-        Uri uri = Uri.fromFile(apkFile);
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_VIEW);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addCategory("android.intent.category.DEFAULT");
-        intent.setDataAndType(uri, "application/vnd.android.package-archive");
-        context.startActivity(intent);
-        android.os.Process.killProcess(android.os.Process.myPid());
+        // 判断版本大于等于7.0
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            // 给目标应用一个临时授权
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Uri uri = FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName() + ".provider", apkFile);
+            intent.setDataAndType(uri, context.getContentResolver().getType(uri));
+        } else {
+            intent.setDataAndType(Uri.fromFile(apkFile), getIntentType(apkFile));
+        }
+        try {
+            context.startActivity(intent);
+            android.os.Process.killProcess(android.os.Process.myPid());
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(context.getApplicationContext(), "安装出现未知问题", Toast.LENGTH_SHORT).show();
+        }
         return true;
     }
 
-
+    private static String getIntentType(File file) {
+        String suffix = file.getName();
+        String name = suffix.substring(suffix.lastIndexOf(".") + 1, suffix.length()).toLowerCase();
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(name);
+    }
 
     /**
      * 删除上次更新存储在本地的apk

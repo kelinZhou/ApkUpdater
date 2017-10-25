@@ -24,6 +24,7 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
         <activity android:name="com.kelin.updatemanagerdemo.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

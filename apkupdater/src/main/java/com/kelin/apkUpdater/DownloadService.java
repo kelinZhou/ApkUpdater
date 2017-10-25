@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -15,9 +16,9 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.provider.MediaStore;
 
 import com.kelin.apkUpdater.callback.DownloadProgressCallback;
-import com.kelin.apkUpdater.util.AssetUtils;
 
 import java.io.File;
 import java.util.concurrent.Executors;
@@ -287,7 +288,7 @@ public class DownloadService extends Service {
             switch (intent.getAction()) {
                 case DownloadManager.ACTION_DOWNLOAD_COMPLETE:
                     if (downloadId == downId && downId != -1 && downloadManager != null) {
-                        File apkFile = AssetUtils.queryDownloadedApk(downloadId, downloadManager);
+                        File apkFile = getRealFile(downloadManager.getUriForDownloadedFile(downloadId));
 
                         if (apkFile != null && apkFile.exists()) {
                             String realPath = apkFile.getAbsolutePath();
@@ -299,6 +300,27 @@ public class DownloadService extends Service {
                     break;
             }
         }
+    }
+
+    public File getRealFile(Uri uri) {
+        if (null == uri) return null;
+        final String scheme = uri.getScheme();
+        String path = null;
+        if (scheme == null || ContentResolver.SCHEME_FILE.equals(scheme)){
+            path = uri.getPath();
+        } else if (ContentResolver.SCHEME_CONTENT.equals(scheme)) {
+            Cursor cursor = getApplicationContext().getContentResolver().query(uri, new String[]{MediaStore.Images.ImageColumns.DATA}, null, null, null);
+            if (null != cursor) {
+                if (cursor.moveToFirst()) {
+                    int index = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+                    if (index > -1) {
+                        path = cursor.getString(index);
+                    }
+                }
+                cursor.close();
+            }
+        }
+        return null == path ? null : new File(path);
     }
 
     /**
