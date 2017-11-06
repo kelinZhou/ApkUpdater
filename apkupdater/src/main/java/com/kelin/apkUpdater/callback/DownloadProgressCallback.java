@@ -14,7 +14,7 @@ public interface DownloadProgressCallback {
     /**
      * 当下载开始的时候调用。
      */
-    void onStartLoad();
+    void onStartDownLoad();
 
     /**
      * 当下在进度改变的时候调用。

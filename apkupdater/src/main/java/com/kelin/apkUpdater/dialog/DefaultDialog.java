@@ -63,13 +63,13 @@ public class DefaultDialog {
             AlertDialog.Builder builder = new AlertDialog.Builder(mContext, DialogParams.getStyle());
             builder.setCancelable(false);
             if (config instanceof DownloadDialogParams) {
-                View contentView = LayoutInflater.from(mContext).inflate(R.layout.com_cheng_shi_layout_progress_layout, null);
+                View contentView = LayoutInflater.from(mContext).inflate(R.layout.com_kelin_apkupdater_layout_progress_layout, null);
                 mProgressBar = (ProgressBar) contentView.findViewById(R.id.progress);
                 int drawableRes;
                 if (ContextCompat.getColor(mProgressBar.getContext(), R.color.colorPrimary) == Color.WHITE) {
-                    drawableRes = R.drawable.com_cheng_shi_downloader_shape_progressbar_mini_default;
+                    drawableRes = R.drawable.com_kelin_apkupdater_shape_progressbar_mini_default;
                 } else {
-                    drawableRes = R.drawable.com_cheng_shi_downloader_shape_progressbar_mini;
+                    drawableRes = R.drawable.com_kelin_apkupdater_shape_progressbar_mini;
                 }
                 mProgressBar.setProgressDrawable(ContextCompat.getDrawable(mProgressBar.getContext(), drawableRes));
                 mPercentageView = (TextView) contentView.findViewById(R.id.tv_percentage);
@@ -129,13 +129,9 @@ public class DefaultDialog {
     }
 
     public void dismissAll() {
-        if (mDialog != null) {
-            dismiss(mDialog);
-        } else if (mNetWorkUnusableDialog != null) {
-            dismiss(mNetWorkUnusableDialog);
-        } else if (mWiFiUnusableDialog != null) {
-            dismiss(mWiFiUnusableDialog);
-        }
+        dismiss(mDialog);
+        dismiss(mNetWorkUnusableDialog);
+        dismiss(mWiFiUnusableDialog);
     }
 
     private void dismiss(AlertDialog dialog) {

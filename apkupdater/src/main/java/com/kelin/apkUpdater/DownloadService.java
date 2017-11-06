@@ -248,7 +248,7 @@ public class DownloadService extends Service {
                                     case DownloadManager.STATUS_RUNNING:
                                         if (mLastFraction == 0xffff_ffff && !mIsStarted) {
                                             mIsStarted = true;
-                                            onProgressListener.onStartLoad();
+                                            onProgressListener.onStartDownLoad();
                                         }
                                     case DownloadManager.STATUS_SUCCESSFUL:
                                         //被除数可以为0，除数必须大于0

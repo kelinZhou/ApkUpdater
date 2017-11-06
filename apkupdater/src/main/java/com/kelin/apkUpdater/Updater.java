@@ -11,12 +11,14 @@ import android.support.annotation.NonNull;
 import android.support.annotation.StyleRes;
 import android.text.TextUtils;
 import android.widget.Toast;
+
 import com.kelin.apkUpdater.callback.DownloadProgressCallback;
 import com.kelin.apkUpdater.callback.UpdateCallback;
 import com.kelin.apkUpdater.dialog.DefaultDialog;
 import com.kelin.apkUpdater.dialog.DownloadDialogParams;
 import com.kelin.apkUpdater.dialog.InformDialogParams;
 import com.kelin.apkUpdater.util.NetWorkStateUtil;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -138,7 +140,16 @@ public final class Updater {
      * 显示进度条对话框。
      */
     private void showProgressDialog() {
-        mDefaultDialog.show(mBuilder.loadDialogConfig, mDialogListener.changeState(DefaultDialogListener.STATE_DOWNLOAD));
+        if (!mBuilder.noDialog) {
+            mDefaultDialog.show(mBuilder.loadDialogConfig, mDialogListener.changeState(DefaultDialogListener.STATE_DOWNLOAD));
+        } else {
+            if (mCallback != null) {
+                mDefaultDialog.dismissAll();
+                mCallback.onShowProgressDialog(isForceUpdate(mUpdateInfo));
+            } else {
+                throw new IllegalArgumentException("you mast call Updater's \"setCallback(UpdateCallback callback)\" Method。");
+            }
+        }
     }
 
     /**
@@ -205,7 +216,9 @@ public final class Updater {
                     showUpdateInformDialog();
                 } else {
                     if (mCallback != null) {
-                        mCallback.onShowCheckHintDialog();
+                        mCallback.onShowCheckHintDialog(Updater.this, updateInfo, isForceUpdate(updateInfo));
+                    } else {
+                        throw new IllegalArgumentException("you mast call Updater's \"setCallback(UpdateCallback callback)\" Method。");
                     }
                 }
             } else {
@@ -238,7 +251,7 @@ public final class Updater {
     /**
      * 响应检查更新的对话框的操作结果。如果你没有关闭默认的对话框使用自定义对话框的话请不要手动调用该方法。
      *
-     * @param isContinue 是否继续，如果继续则说明统一更新，否则就是不统一更新。
+     * @param isContinue 是否继续，如果继续则说明同意更新，否则就是不同意更新。
      */
     private void respondCheckHandlerResult(boolean isContinue) {
         if (isContinue && mHaveNewVersion) {
@@ -546,13 +559,11 @@ public final class Updater {
     private class OnLoadProgressListener implements DownloadProgressCallback {
 
         @Override
-        public void onStartLoad() {
+        public void onStartDownLoad() {
             if (mCallback != null) {
-                mCallback.onStartLoad();
+                mCallback.onStartDownLoad();
             }
-            if (!mBuilder.noDialog) {
-                showProgressDialog();
-            }
+            showProgressDialog();
         }
 
         @Override

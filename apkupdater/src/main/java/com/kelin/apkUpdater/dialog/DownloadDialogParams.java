@@ -20,7 +20,7 @@ public class DownloadDialogParams extends DialogParams {
      */
     @Override
     public int getIcon() {
-        return icon == 0 ? R.drawable.com_cheng_shi_ic_download_green : icon;
+        return icon == 0 ? R.drawable.com_kelin_apkupdater_ic_download_green : icon;
     }
 
     /**
