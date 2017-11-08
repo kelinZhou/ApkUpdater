@@ -41,7 +41,7 @@ public final class Updater {
     private UpdateInfo mUpdateInfo;
     private boolean mHaveNewVersion;
     private boolean mIsChecked;
-    private int mLocalVersionCode = 0xffff_ffff;
+    private static int sLocalVersionCode = 0xffff_ffff;
     private boolean mAutoInstall = true;
     private NetWorkStateChangedReceiver mNetWorkStateChangedReceiver;
     private OnLoadProgressListener mOnProgressListener;
@@ -111,7 +111,7 @@ public final class Updater {
      *
      * @return 如果是返回true，否则返回false。
      */
-    private boolean isForceUpdate(@NonNull UpdateInfo updateInfo) {
+    public static boolean isForceUpdate(@NonNull UpdateInfo updateInfo, @NonNull Context context) {
         if (!updateInfo.isForceUpdate()) {
             return false;
         } else {
@@ -120,7 +120,7 @@ public final class Updater {
                 return true;
             } else {
                 for (int code : codes) {
-                    if (getLocalVersionCode() == code) {
+                    if (getLocalVersionCode(context) == code) {
                         return true;
                     }
                 }
@@ -129,11 +129,20 @@ public final class Updater {
         }
     }
 
-    private int getLocalVersionCode() {
-        if (mLocalVersionCode == 0xffff_ffff) {
-            mLocalVersionCode = UpdateHelper.getCurrentVersionCode(mApplicationContext);
+    /**
+     * 判断当前版本是否是强制更新。
+     *
+     * @return 如果是返回true，否则返回false。
+     */
+    private boolean isForceUpdate(@NonNull UpdateInfo updateInfo) {
+        return isForceUpdate(updateInfo, mApplicationContext);
+    }
+
+    private static int getLocalVersionCode(Context context) {
+        if (sLocalVersionCode == 0xffff_ffff) {
+            sLocalVersionCode = UpdateHelper.getCurrentVersionCode(context);
         }
-        return mLocalVersionCode;
+        return sLocalVersionCode;
     }
 
     /**
@@ -209,7 +218,7 @@ public final class Updater {
             } else {
                 UpdateHelper.removeOldApk(mApplicationContext);
             }
-            if (updateInfo.getVersionCode() > getLocalVersionCode()) {
+            if (updateInfo.getVersionCode() > getLocalVersionCode(mApplicationContext)) {
                 mHaveNewVersion = true;
                 if (!mBuilder.noDialog) {
                     mBuilder.informDialogConfig.setForceUpdate(isForceUpdate(updateInfo));
