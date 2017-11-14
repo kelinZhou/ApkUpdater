@@ -79,8 +79,7 @@ public abstract class UpdateCallback implements DownloadProgressCallback {
     }
 
     /**
-     * 下载进度更新的时候调用。如果您是自定义的UI交互的话您需要覆盖此方法，并在此方法中做更新进度的操作。
-     * 您还需要在进度完成后进行销毁dialog的操作。
+     * 下载进度更新的时候调用。
      *
      * @param total      文件总大小(字节)。
      * @param current    当前的进度(字节)。

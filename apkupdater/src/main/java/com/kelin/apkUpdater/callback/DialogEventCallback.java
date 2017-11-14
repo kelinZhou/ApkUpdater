@@ -1,7 +1,6 @@
 package com.kelin.apkUpdater.callback;
 
 import android.support.annotation.NonNull;
-
 import com.kelin.apkUpdater.UpdateInfo;
 import com.kelin.apkUpdater.Updater;
 
@@ -16,8 +15,6 @@ public interface DialogEventCallback {
 
     /**
      * 当需要显示检查更新提示对话框的时候调用。你需要在这里进行检查更新提示对话框的显示。
-     * 这个方法并不一定会调用，如果你在构建 {@link Updater.Builder} 的时候调用了
-     * {@link Updater.Builder#setNoDialog()} 方法关闭了默认对话框的话，那么这个方法一定会执行，否则就不会执行。
      * 在用户做出相应的操作后，你应当调用{@link Updater#setCheckHandlerResult(boolean)}方法进行下一步的操作。
      *
      * @param updater {@link Updater}对象。
@@ -28,8 +25,6 @@ public interface DialogEventCallback {
 
     /**
      * 当需要加载下载进度对话框的时候调用，你需要在这做显示下载进度对话框的操作。
-     * <p>这个方法并不一定会调用，如果你在构建 {@link Updater.Builder} 的时候调用了
-     * {@link Updater.Builder#setNoDialog()} 方法关闭了默认对话框的话，那么这个方法一定会执行，否则就不会执行。
      * <p>也有可能这个方法会调用不止一次，如果你在构建 {@link Updater.Builder} 的时候没有调用
      * {@link Updater.Builder#setCheckWiFiState(boolean)}方法改变检测网络状态的话默认是会检测WIFI状态的。当WIFI状态改变的时候
      * 有可能会再次调用该方法，所以这里你要做好相应的判断，以避免Dialog会显示多次。
