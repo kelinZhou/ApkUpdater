@@ -12,6 +12,7 @@ import android.support.annotation.StyleRes;
 import android.text.TextUtils;
 import android.widget.Toast;
 
+import com.kelin.apkUpdater.callback.DialogEventCallback;
 import com.kelin.apkUpdater.callback.DownloadProgressCallback;
 import com.kelin.apkUpdater.callback.UpdateCallback;
 import com.kelin.apkUpdater.dialog.DefaultDialog;
@@ -152,9 +153,9 @@ public final class Updater {
         if (!mBuilder.noDialog) {
             mDefaultDialog.show(mBuilder.loadDialogConfig, mDialogListener.changeState(DefaultDialogListener.STATE_DOWNLOAD));
         } else {
-            if (mCallback != null) {
+            if (mBuilder.dialogCallback != null) {
                 mDefaultDialog.dismissAll();
-                mCallback.onShowProgressDialog(isForceUpdate(mUpdateInfo));
+                mBuilder.dialogCallback.onShowProgressDialog(isForceUpdate(mUpdateInfo));
             } else {
                 throw new IllegalArgumentException("you mast call Updater's \"setCallback(UpdateCallback callback)\" Method。");
             }
@@ -224,8 +225,8 @@ public final class Updater {
                     mBuilder.informDialogConfig.setForceUpdate(isForceUpdate(updateInfo));
                     showUpdateInformDialog();
                 } else {
-                    if (mCallback != null) {
-                        mCallback.onShowCheckHintDialog(Updater.this, updateInfo, isForceUpdate(updateInfo));
+                    if (mBuilder.dialogCallback != null) {
+                        mBuilder.dialogCallback.onShowCheckHintDialog(Updater.this, updateInfo, isForceUpdate(updateInfo));
                     } else {
                         throw new IllegalArgumentException("you mast call Updater's \"setCallback(UpdateCallback callback)\" Method。");
                     }
@@ -415,6 +416,7 @@ public final class Updater {
          * 是否检测WiFi链接状态。
          */
         private boolean checkWiFiState = true;
+        private DialogEventCallback dialogCallback;
 
         public Builder(@NonNull Activity context) {
             this.context = context;
@@ -494,8 +496,9 @@ public final class Updater {
          * 如果你关闭了默认的对话框的话就必须自己实现UI交互，并且在用户更新提示做出反应的时候调用
          * {@link #setCheckHandlerResult(boolean)} 方法。
          */
-        public Builder setNoDialog() {
+        public Builder setNoDialog(@NonNull DialogEventCallback callback) {
             this.noDialog = true;
+            this.dialogCallback = callback;
             return this;
         }
 
@@ -582,6 +585,9 @@ public final class Updater {
             }
             if (mCallback != null) {
                 mCallback.onProgress(total, current, percentage);
+            }
+            if (mBuilder.dialogCallback != null) {
+                mBuilder.dialogCallback.onProgress(total, current, percentage);
             }
             if (!mBuilder.noDialog) {
                 updateProgressDialog(percentage);

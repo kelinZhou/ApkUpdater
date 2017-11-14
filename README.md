@@ -42,7 +42,7 @@ dependencies {
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 ```
 ###### 获取更新信息
-首先利用你项目的网络访问能力从服务端获取更新信息并转换为**javaBean**对象，然后让这个对象实现**UpdateInfo**接口。下面是这个接口中所有方法：
+首先利用你项目的网络访问能力从服务器端获取更新信息并转换为**javaBean**对象，然后让这个对象实现**UpdateInfo**接口。下面是这个接口中所有方法：
 ```
 public interface UpdateInfo {
 
@@ -74,6 +74,7 @@ public interface UpdateInfo {
 
     /**
      * 获取Apk文件名(例如 xxx.apk 或 xxx)。后缀名不是必须的。
+     * 可以返回null，如果返回null则默认使用日期作为文件名。
      */
     @Nullable String getApkName();
 

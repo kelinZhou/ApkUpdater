@@ -38,6 +38,7 @@ public interface UpdateInfo {
 
     /**
      * 获取Apk文件名(例如 xxx.apk 或 xxx)。后缀名不是必须的。
+     * 可以返回null，如果返回null则默认使用日期作为文件名。
      */
     @Nullable String getApkName();
 

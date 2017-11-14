@@ -98,6 +98,7 @@ public class UpdateHelper {
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(context.getApplicationContext(), "安装出现未知问题", Toast.LENGTH_SHORT).show();
+            return false;
         }
         return true;
     }
