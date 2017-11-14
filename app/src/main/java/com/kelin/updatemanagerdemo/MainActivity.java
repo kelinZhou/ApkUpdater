@@ -37,8 +37,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         private static final String TAG = "ApkUpdateCallback";
 
         /**
-         * 开始下载，在开始执行下载的时候调用。如果你在构建 {@link Updater.Builder} 的时候调用了
-         * {@link Updater.Builder#setNoDialog()} 方法关闭了默认对话框的话，那么你需要在这做显示下载进度操作。
+         * 开始下载，在开始执行下载的时候调用。
          */
         @Override
         public void onStartDownLoad() {
