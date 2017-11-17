@@ -116,15 +116,16 @@ public class DefaultDialog {
         if (listener != null && mOnClickListener == null) {
             mOnClickListener = new DialogClickListener();
         }
+        mOnClickListener.setListener(listener);
         if (mWiFiUnusableDialog == null) {
             mWiFiUnusableDialog = new AlertDialog.Builder(mContext, DialogParams.getStyle())
+                    .setCancelable(false)
                     .setTitle("提示：")
                     .setMessage("当前为非WiFi网络，是否继续下载？")
                     .setPositiveButton("继续下载", mOnClickListener)
                     .setNegativeButton("稍后下载", mOnClickListener)
                     .create();
         }
-        mOnClickListener.setListener(listener);
         mWiFiUnusableDialog.show();
     }
 
@@ -148,14 +149,15 @@ public class DefaultDialog {
             mOnClickListener = new DialogClickListener();
         }
 
+        mOnClickListener.setListener(listener);
         if (mNetWorkUnusableDialog == null) {
             mNetWorkUnusableDialog = new AlertDialog.Builder(mContext, DialogParams.getStyle())
+                    .setCancelable(false)
                     .setTitle("提示：")
                     .setMessage("网络连接已经断开，请稍后再试。")
                     .setNegativeButton("确定", mOnClickListener)
                     .create();
         }
-        mOnClickListener.setListener(listener);
         mNetWorkUnusableDialog.show();
     }
 
