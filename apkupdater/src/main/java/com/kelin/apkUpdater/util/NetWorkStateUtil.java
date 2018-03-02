@@ -115,7 +115,6 @@ public class NetWorkStateUtil {
                 return;
             }
             if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
-                boolean isMobileEnabled = isMobileEnabled(context);
                 if (networkInfo.isConnected()) {
                     if (type == ConnectivityManager.TYPE_WIFI && !sIsWifiConnected) {
                         sIsWifiConnected = true;
@@ -126,7 +125,7 @@ public class NetWorkStateUtil {
                     }
                 } else {
                     sIsWifiConnected = false;
-                    if (!isMobileEnabled) {
+                    if (!NetWorkStateUtil.isConnected(context)) {
                         onDisconnected(type);
                     }
                 }
