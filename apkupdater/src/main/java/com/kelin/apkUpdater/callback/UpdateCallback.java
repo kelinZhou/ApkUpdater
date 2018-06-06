@@ -57,7 +57,8 @@ public abstract class UpdateCallback implements DownloadProgressCallback {
     /**
      * 当下载被取消后调用。即表明用户不想进行本次更新，强制更新一般情况下是不能取消的，除非你设置了需要检查WIFI而WIFI又没有链接。
      */
-    public abstract void onLoadCancelled();
+    public void onLoadCancelled() {
+    }
 
     /**
      * 如果在安装过程中发生了意外导致安装失败会执行此方法。

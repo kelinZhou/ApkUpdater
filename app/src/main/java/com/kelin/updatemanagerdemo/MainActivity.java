@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         findViewById(R.id.btn_check_update).setOnClickListener(this);
 
+        // TODO: 2018/4/2 当下载链接无效的时候回造成一直不下载而有无法销毁下载进度对话框。
         mUpdater = new Updater.Builder(this)
                 .setCallback(new ApkUpdateCallback())
                 .setCheckWiFiState(true)

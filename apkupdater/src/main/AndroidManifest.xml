@@ -1,9 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.kelin.apkUpdater">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.kelin.apkUpdater">
 
-    <application android:allowBackup="true"
-                 android:label="@string/app_name"
-                 android:supportsRtl="true">
+    <application
+        android:allowBackup="true"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        tools:replace="icon, label, theme">
         <!--Android7.0安装Apk所需要的文件提供者-->
         <provider
             android:name="android.support.v4.content.FileProvider"
@@ -12,11 +15,11 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/com_kelin_apkupdater_file_paths"/>
+                android:resource="@xml/com_kelin_apkupdater_file_paths" />
         </provider>
 
         <!--版本更新服务-->
-        <service android:name="com.kelin.apkUpdater.DownloadService"/>
+        <service android:name="com.kelin.apkUpdater.DownloadService" />
     </application>
 
 </manifest>

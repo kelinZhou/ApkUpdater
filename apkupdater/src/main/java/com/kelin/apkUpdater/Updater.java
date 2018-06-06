@@ -612,10 +612,11 @@ public final class Updater {
             unregisterNetWorkReceiver();
             stopService();  //结束服务
             mDefaultDialog.dismissAll();
-            Toast.makeText(mApplicationContext, "sorry, 跟新失败了~", Toast.LENGTH_SHORT).show();
             if (mCallback != null) {
                 mCallback.onLoadFailed();
                 mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
+            } else {
+                Toast.makeText(mApplicationContext, "sorry, 跟新失败了~", Toast.LENGTH_SHORT).show();
             }
         }
 
