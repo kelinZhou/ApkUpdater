@@ -287,6 +287,7 @@ public final class Updater {
         } else {
             if (mCallback != null) {
                 mCallback.onLoadCancelled();
+                mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
             }
         }
     }
