@@ -202,10 +202,12 @@ public final class Updater {
             throw new IllegalArgumentException("Because you neither set up to monitor installed automatically, so the check update is pointless.");
         }
         if (!NetWorkStateUtil.isConnected(mApplicationContext)) {
+            mCallback.onCompleted(false, UpdateHelper.getCurrentVersionName(mApplicationContext));
             return;
         }
         if (updateInfo != null && mUpdateInfo != updateInfo) {
             if (TextUtils.isEmpty(updateInfo.getDownLoadsUrl())) {
+                mCallback.onCompleted(updateInfo.getVersionCode() > getLocalVersionCode(mApplicationContext), UpdateHelper.getCurrentVersionName(mApplicationContext));
                 return;
             }
             mAutoInstall = autoInstall;
