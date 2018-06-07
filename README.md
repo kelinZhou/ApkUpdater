@@ -41,6 +41,25 @@ dependencies {
     <!--获取网络状态权限-->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 ```
+
+###### 清单文件配置
+你需要在你清单文件中的**Application**节点下添加如下配置：
+```
+<!--Android7.0一上安装Apk所需要的文件提供者-->
+<provider
+    android:name="android.support.v4.content.FileProvider"
+    android:authorities="${applicationId}.provider"
+    android:exported="false"
+    android:grantUriPermissions="true">
+    <meta-data
+        android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/com_kelin_apk_updater_file_paths" />
+</provider>
+
+<!--版本更新服务-->
+<service android:name="com.kelin.apkUpdater.DownloadService" />
+```
+
 ###### 获取更新信息
 首先利用你项目的网络访问能力从服务器端获取更新信息并转换为**javaBean**对象，然后让这个对象实现**UpdateInfo**接口。下面是这个接口中所有方法：
 ```
