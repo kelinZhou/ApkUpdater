@@ -267,8 +267,8 @@ public final class Updater {
      */
     private void respondCheckHandlerResult(boolean isContinue) {
         if (isContinue && mHaveNewVersion) {
-            if (mIsLoaded) {
-                File apkFile = new File(UpdateHelper.getApkPathFromSp(mApplicationContext));
+            File apkFile;
+            if (mIsLoaded && (apkFile = new File(UpdateHelper.getApkPathFromSp(mApplicationContext))).exists()) {
                 if (mCallback != null) {
                     mCallback.onLoadSuccess(apkFile, true);
                     mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
@@ -677,8 +677,10 @@ public final class Updater {
                     if (mCallback != null) {
                         if (isBindService) {
                             mCallback.onLoadCancelled();
+                            mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
                         } else {
                             mCallback.onCheckCancelled();
+                            mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
                         }
                     }
                     break;
@@ -688,6 +690,7 @@ public final class Updater {
                     } else {
                         if (mCallback != null) {
                             mCallback.onLoadCancelled();
+                            mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
                         }
                     }
                     break;
