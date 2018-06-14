@@ -18,6 +18,11 @@ public class UpdateModel implements UpdateInfo {
     }
 
     @Override
+    public String getVersionName() {
+        return null;
+    }
+
+    @Override
     public String getDownLoadsUrl() {
         return "http://sdk.useonline.cn/platform_sdk/dev/app-use-com.chengshi.app.platform.pricing-release.apk";
     }

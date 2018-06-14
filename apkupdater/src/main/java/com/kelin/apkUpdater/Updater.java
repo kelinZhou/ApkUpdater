@@ -207,6 +207,7 @@ public final class Updater {
         }
         if (updateInfo != null && mUpdateInfo != updateInfo) {
             if (TextUtils.isEmpty(updateInfo.getDownLoadsUrl())) {
+                mCallback.onLoadFailed();
                 mCallback.onCompleted(updateInfo.getVersionCode() > getLocalVersionCode(mApplicationContext), UpdateHelper.getCurrentVersionName(mApplicationContext));
                 return;
             }
@@ -216,7 +217,10 @@ public final class Updater {
             mBuilder.loadDialogConfig.setForceUpdate(isForceUpdate(updateInfo));
             mBuilder.informDialogConfig.setMsg(updateInfo.getUpdateMessage());
             //如果这个条件满足说明上一次没有安装。有因为即使上一次没有安装最新的版本也有可能超出了上一次下载的版本，所以要在这里判断。
-            if (UpdateHelper.getApkVersionCodeFromSp(mApplicationContext) == updateInfo.getVersionCode() && new File(UpdateHelper.getApkPathFromSp(mApplicationContext)).exists()) {
+            String apkPath;
+            if (UpdateHelper.getApkVersionCodeFromSp(mApplicationContext) == updateInfo.getVersionCode()
+                    && (apkPath = UpdateHelper.getApkPathFromSp(mApplicationContext)).toLowerCase().endsWith(".apk")
+                    && new File(apkPath).exists()) {
                 mIsLoaded = true;
             } else {
                 UpdateHelper.removeOldApk(mApplicationContext);
@@ -318,7 +322,12 @@ public final class Updater {
     }
 
     private String getApkName(@NonNull UpdateInfo updateInfo) {
-        return TextUtils.isEmpty(updateInfo.getApkName()) ? getDefaultApkName() : updateInfo.getApkName();
+        String apkName = updateInfo.getApkName();
+        if (TextUtils.isEmpty(apkName)) {
+            return getDefaultApkName();
+        } else {
+            return apkName.toLowerCase().endsWith(".apk") ? apkName : (apkName + ".apk");
+        }
     }
 
     /**
@@ -389,7 +398,7 @@ public final class Updater {
      * @return 返回一个以 "包名+日期" 命名的Apk名称。
      */
     private String getDefaultApkName() {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-M-d", Locale.CHINA);
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-M-d_HH-MM", Locale.CHINA);
         String formatDate = format.format(new Date());
         return mApplicationContext.getPackageName() + formatDate + ".apk";
     }

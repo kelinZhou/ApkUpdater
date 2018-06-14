@@ -17,6 +17,12 @@ public interface UpdateInfo {
     int getVersionCode();
 
     /**
+     * 获取网络上的版本名称。
+     * @return 返回当前对象的版本名称字段的值。
+     */
+    String getVersionName();
+
+    /**
      * 获取最新版本的下载链接。
      * @return 返回当前对象的下载链接字段的值。
      */
