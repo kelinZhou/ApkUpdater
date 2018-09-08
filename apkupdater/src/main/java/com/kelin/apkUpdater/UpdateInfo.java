@@ -53,4 +53,10 @@ public interface UpdateInfo {
      * @return 返回你本次更新的内容。
      */
     CharSequence getUpdateMessage();
+
+    /**
+     * 获取网络上最新安装包的MD5值，用户校验下载后的安装包是否完整以及是否修改等。
+     * @return 如果你希望使用MD5校验则返回网络上最近安装包的MD5值，如果返回null这表示不进行MD5校验。
+     */
+    @Nullable String getMd5();
 }

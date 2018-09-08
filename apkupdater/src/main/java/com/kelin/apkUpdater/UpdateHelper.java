@@ -14,6 +14,8 @@ import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.security.MessageDigest;
 
 
 /**
@@ -37,8 +39,10 @@ public class UpdateHelper {
      * 上一次下载的APK的版本号。
      */
     private static final String SP_KEY_DOWNLOAD_APK_VERSION_CODE = "com.kelin.apkUpdater.apkVersionCode";
+
     /**
      * 获取当前的版本号。
+     *
      * @param context 需要一个上下文。
      * @return 返回当前的版本号。
      */
@@ -55,6 +59,7 @@ public class UpdateHelper {
 
     /**
      * 获取当前的版本名称。
+     *
      * @param context 需要一个上下文。
      * @return 返回当前的版本名称。
      */
@@ -72,6 +77,7 @@ public class UpdateHelper {
 
     /**
      * 安装APK
+     *
      * @param context {@link Activity} 对象。
      * @param apkFile 安装包的路径
      */
@@ -92,12 +98,11 @@ public class UpdateHelper {
         } else {
             intent.setDataAndType(Uri.fromFile(apkFile), getIntentType(apkFile));
         }
+        context.startActivity(intent);
         try {
-            context.startActivity(intent);
             android.os.Process.killProcess(android.os.Process.myPid());
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(context.getApplicationContext(), "安装出现未知问题", Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;
@@ -149,5 +154,44 @@ public class UpdateHelper {
     private static SharedPreferences.Editor getEdit(Context context) {
         SharedPreferences sp = context.getSharedPreferences(CONFIG_NAME, Context.MODE_PRIVATE);
         return sp.edit();
+    }
+
+
+    public static String getFileMD5(File file) {
+        if (!file.isFile()) {
+            return null;
+        }
+        MessageDigest digest;
+        FileInputStream in;
+        byte buffer[] = new byte[1024];
+        int len;
+        try {
+            digest = MessageDigest.getInstance("MD5");
+            in = new FileInputStream(file);
+            while ((len = in.read(buffer, 0, 1024)) != -1) {
+                digest.update(buffer, 0, len);
+            }
+            in.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        return bytesToHexString(digest.digest());
+    }
+
+    public static String bytesToHexString(byte[] src) {
+        StringBuilder stringBuilder = new StringBuilder("");
+        if (src == null || src.length <= 0) {
+            return null;
+        }
+        for (byte aSrc : src) {
+            int v = aSrc & 0xFF;
+            String hv = Integer.toHexString(v);
+            if (hv.length() < 2) {
+                stringBuilder.append(0);
+            }
+            stringBuilder.append(hv);
+        }
+        return stringBuilder.toString();
     }
 }

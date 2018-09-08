@@ -92,14 +92,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         /**
-         * 检查更新被取消。如果当前设备无网络可用则会执行该方法。
-         */
-        @Override
-        public void onCheckCancelled() {
-            Log.i(TAG, "onCheckCancelled: 检查更新被取消。");
-        }
-
-        /**
          * 当下载被取消后调用。即表明用户不想进行本次更新，强制更新一般情况下是不能取消的，除非你设置了需要检查WIFI而WIFI又没有链接。
          */
         @Override
@@ -121,12 +113,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
          *                       <code color="blue">true</code>表示有新的版本,
          *                       <code color="blue">false</code>则表示没有新的版本。
          * @param curVersionName 当前app的版本名称。
+         * @param successful     本次检测更新是否是成功的。这里的说所的成功的意思就是即检测到了新的版本且下载的安装包是有效且可以安装的。
          */
         @Override
-        public void onCompleted(boolean haveNewVersion, String curVersionName) {
+        public void onCompleted(boolean haveNewVersion, String curVersionName, boolean successful, boolean isForceUpdate) {
             Log.i(TAG, "onCompleted: 完成。");
             if (!haveNewVersion) {
                 Toast.makeText(getApplicationContext(), "当前已是最新版本：" + curVersionName, Toast.LENGTH_SHORT).show();
+            } else if (!successful && isForceUpdate) {
+                Toast.makeText(getApplicationContext(), "您必须升级后才能继续使用！" + curVersionName, Toast.LENGTH_SHORT).show();
             }
         }
     }

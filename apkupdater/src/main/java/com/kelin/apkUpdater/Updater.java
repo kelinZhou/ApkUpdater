@@ -21,6 +21,8 @@ import com.kelin.apkUpdater.dialog.InformDialogParams;
 import com.kelin.apkUpdater.util.NetWorkStateUtil;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -187,7 +189,7 @@ public final class Updater {
      *
      * @param updateInfo 更新信息对象。
      */
-    public void check(UpdateInfo updateInfo) {
+    public void check(@NonNull UpdateInfo updateInfo) {
         check(updateInfo, true);
     }
 
@@ -197,18 +199,19 @@ public final class Updater {
      * @param updateInfo  更新信息对象。
      * @param autoInstall 是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
      */
-    public void check(UpdateInfo updateInfo, boolean autoInstall) {
+    public void check(@NonNull UpdateInfo updateInfo, boolean autoInstall) {
         if (!autoInstall && mCallback == null) {
             throw new IllegalArgumentException("Because you neither set up to monitor installed automatically, so the check update is pointless.");
         }
+        boolean haveNewVersion = updateInfo.getVersionCode() > getLocalVersionCode(mApplicationContext);
         if (!NetWorkStateUtil.isConnected(mApplicationContext)) {
-            mCallback.onCompleted(false, UpdateHelper.getCurrentVersionName(mApplicationContext));
+            mCallback.onCompleted(haveNewVersion, UpdateHelper.getCurrentVersionName(mApplicationContext), false, mUpdateInfo.isForceUpdate());
             return;
         }
-        if (updateInfo != null && mUpdateInfo != updateInfo) {
+        if (mUpdateInfo != updateInfo) {
             if (TextUtils.isEmpty(updateInfo.getDownLoadsUrl())) {
                 mCallback.onLoadFailed();
-                mCallback.onCompleted(updateInfo.getVersionCode() > getLocalVersionCode(mApplicationContext), UpdateHelper.getCurrentVersionName(mApplicationContext));
+                mCallback.onCompleted(haveNewVersion, UpdateHelper.getCurrentVersionName(mApplicationContext), false, mUpdateInfo.isForceUpdate());
                 return;
             }
             mAutoInstall = autoInstall;
@@ -225,7 +228,7 @@ public final class Updater {
             } else {
                 UpdateHelper.removeOldApk(mApplicationContext);
             }
-            if (updateInfo.getVersionCode() > getLocalVersionCode(mApplicationContext)) {
+            if (haveNewVersion) {
                 mHaveNewVersion = true;
                 if (!mBuilder.noDialog) {
                     mBuilder.informDialogConfig.setForceUpdate(isForceUpdate(updateInfo));
@@ -239,7 +242,7 @@ public final class Updater {
                 }
             } else {
                 if (mCallback != null) {
-                    mCallback.onCompleted(false, UpdateHelper.getCurrentVersionName(mApplicationContext));
+                    mCallback.onCompleted(false, UpdateHelper.getCurrentVersionName(mApplicationContext), false, mUpdateInfo.isForceUpdate());
                 }
             }
         }
@@ -272,10 +275,10 @@ public final class Updater {
     private void respondCheckHandlerResult(boolean isContinue) {
         if (isContinue && mHaveNewVersion) {
             File apkFile;
-            if (mIsLoaded && (apkFile = new File(UpdateHelper.getApkPathFromSp(mApplicationContext))).exists()) {
+            if (mIsLoaded && checkFileMD5(apkFile = new File(UpdateHelper.getApkPathFromSp(mApplicationContext)))) {
                 if (mCallback != null) {
                     mCallback.onLoadSuccess(apkFile, true);
-                    mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
+                    mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext), true, mUpdateInfo.isForceUpdate());
                 }
                 if (mAutoInstall) {
                     boolean installApk = UpdateHelper.installApk(mApplicationContext, apkFile);
@@ -291,7 +294,7 @@ public final class Updater {
         } else {
             if (mCallback != null) {
                 mCallback.onLoadCancelled();
-                mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
+                mCallback.onCompleted(mHaveNewVersion, UpdateHelper.getCurrentVersionName(mApplicationContext), false, mUpdateInfo.isForceUpdate());
             }
         }
     }
@@ -580,6 +583,15 @@ public final class Updater {
         }
     }
 
+    private boolean checkFileMD5(File apkFile) {
+        if (!apkFile.exists()) {
+            return false;
+        } else {
+            String availableMd5 = mUpdateInfo.getMd5();
+            return availableMd5 == null || TextUtils.equals(availableMd5, UpdateHelper.getFileMD5(apkFile));
+        }
+    }
+
     private class OnLoadProgressListener implements DownloadProgressCallback {
 
         @Override
@@ -608,14 +620,19 @@ public final class Updater {
 
         @Override
         public void onLoadSuccess(File apkFile, boolean isCache) {
-            unregisterNetWorkReceiver();
-            stopService();  //结束服务
-            if (mCallback != null) {
-                mCallback.onLoadSuccess(apkFile, isCache);
-                mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
-            }
-            if (mAutoInstall) {
-                UpdateHelper.installApk(mApplicationContext, apkFile);
+            if (!checkFileMD5(apkFile)) {
+                UpdateHelper.removeOldApk(mApplicationContext);
+                onLoadFailed();
+            } else {
+                unregisterNetWorkReceiver();
+                stopService();  //结束服务
+                if (mCallback != null) {
+                    mCallback.onLoadSuccess(apkFile, isCache);
+                    mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext), true, mUpdateInfo.isForceUpdate());
+                }
+                if (mAutoInstall) {
+                    UpdateHelper.installApk(mApplicationContext, apkFile);
+                }
             }
         }
 
@@ -626,7 +643,7 @@ public final class Updater {
             mDefaultDialog.dismissAll();
             if (mCallback != null) {
                 mCallback.onLoadFailed();
-                mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
+                mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext), false, mUpdateInfo.isForceUpdate());
             } else {
                 Toast.makeText(mApplicationContext, "sorry, 跟新失败了~", Toast.LENGTH_SHORT).show();
             }
@@ -687,10 +704,9 @@ public final class Updater {
                     if (mCallback != null) {
                         if (isBindService) {
                             mCallback.onLoadCancelled();
-                            mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
+                            mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext), false, mUpdateInfo.isForceUpdate());
                         } else {
-                            mCallback.onCheckCancelled();
-                            mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
+                            mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext), false, mUpdateInfo.isForceUpdate());
                         }
                     }
                     break;
@@ -700,7 +716,7 @@ public final class Updater {
                     } else {
                         if (mCallback != null) {
                             mCallback.onLoadCancelled();
-                            mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext));
+                            mCallback.onCompleted(true, UpdateHelper.getCurrentVersionName(mApplicationContext), false, mUpdateInfo.isForceUpdate());
                         }
                     }
                     break;
@@ -710,5 +726,4 @@ public final class Updater {
             }
         }
     }
-
 }

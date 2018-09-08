@@ -24,12 +24,12 @@ public class UpdateModel implements UpdateInfo {
 
     @Override
     public String getDownLoadsUrl() {
-        return "http://sdk.useonline.cn/platform_sdk/dev/app-use-com.chengshi.app.platform.pricing-release.apk";
+        return "https://qd.myapp.com/myapp/qqteam/AndroidQQ/mobileqq_android.apk";
     }
 
     @Override
     public boolean isForceUpdate() {
-        return true;
+        return false;
     }
 
     /**
@@ -54,5 +54,11 @@ public class UpdateModel implements UpdateInfo {
     @Override
     public CharSequence getUpdateMessage() {
         return "1.修复了极端情况下可能导致下单失败的bug。\n2.增加了许多新的玩法，并且增加了app的稳定性。 \n3.这是测试内容，其实什么都没有更新。";
+    }
+
+    @Nullable
+    @Override
+    public String getMd5() {
+        return "6ac36ff3f013ebb39074aa663e66e157";
     }
 }

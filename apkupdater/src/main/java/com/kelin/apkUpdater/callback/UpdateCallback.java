@@ -1,5 +1,7 @@
 package com.kelin.apkUpdater.callback;
 
+import com.kelin.apkUpdater.UpdateInfo;
+
 import java.io.File;
 
 /**
@@ -18,27 +20,32 @@ public abstract class UpdateCallback implements DownloadProgressCallback {
     }
 
     /**
+     * 下载进度更新的时候调用。
+     *
+     * @param total      文件总大小(字节)。
+     * @param current    当前的进度(字节)。
+     * @param percentage 当前下载进度的百分比。
+     */
+    @Override
+    public void onProgress(long total, long current, int percentage) {
+    }
+
+    /**
      * 下载完成。
      *
      * @param apkFile 已经下载好的APK文件对象。
-     * @param isCache 是否是缓存，如果改参数为true说明本次并没有真正的执行下载任务，因为上一次用户下载完毕后并没有进行
+     * @param isCache 是否是缓存，如果改参数为true说明本次并没有真正的执行下载任务，因为上一次用户下载完毕后并没有进行安装。
      */
     @Override
     public void onLoadSuccess(File apkFile, boolean isCache) {
     }
 
     /**
-     * 当下载失败的时候调用。
+     * 当下载被取消后调用。即表明用户不想进行本次更新，强制更新一般情况下是不能取消的，
+     * 除非你调用了{@link com.kelin.apkUpdater.Updater.Builder#setCheckWiFiState(boolean)}方法并将参数设置为true，
+     * 这就意味着你希望在用户的网络为4G网络的时候提醒用户，而这个提醒之后用户是可以取消下载的，当用户取消下载之后就会执行该方法。
      */
-    @Override
-    public void onLoadFailed() {
-    }
-
-    /**
-     * 下载暂停。
-     */
-    @Override
-    public void onLoadPaused() {
+    public void onLoadCancelled() {
     }
 
     /**
@@ -49,15 +56,17 @@ public abstract class UpdateCallback implements DownloadProgressCallback {
     }
 
     /**
-     * 检查更新被取消。如果当前设备无网络可用则会执行该方法。
+     * 下载暂停。
      */
-    public void onCheckCancelled() {
+    @Override
+    public void onLoadPaused() {
     }
 
     /**
-     * 当下载被取消后调用。即表明用户不想进行本次更新，强制更新一般情况下是不能取消的，除非你设置了需要检查WIFI而WIFI又没有链接。
+     * 当下载失败的时候调用。
      */
-    public void onLoadCancelled() {
+    @Override
+    public void onLoadFailed() {
     }
 
     /**
@@ -75,18 +84,9 @@ public abstract class UpdateCallback implements DownloadProgressCallback {
      *                       <code color="blue">true</code>表示有新的版本,
      *                       <code color="blue">false</code>则表示没有新的版本。
      * @param curVersionName 当前app的版本名称。
+     * @param successful     本次检测更新是否是成功的。这里的说所的成功的意思就是即检测到了新的版本且下载的安装包是有效且可以安装的。
+     * @param isForceUpdate  是否是强制更新。这个字段的值其实就{@link UpdateInfo#isForceUpdate()}的返回值。
      */
-    public void onCompleted(boolean haveNewVersion, String curVersionName) {
-    }
-
-    /**
-     * 下载进度更新的时候调用。
-     *
-     * @param total      文件总大小(字节)。
-     * @param current    当前的进度(字节)。
-     * @param percentage 当前下载进度的百分比。
-     */
-    @Override
-    public void onProgress(long total, long current, int percentage) {
+    public void onCompleted(boolean haveNewVersion, String curVersionName, boolean successful, boolean isForceUpdate) {
     }
 }
