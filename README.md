@@ -1,9 +1,9 @@
 # ApkUpdater
-基于DownLoadManager实现安装包更新，安装包缓存，支持断点续传，自定义UI，提供了默认UI。
+基于DownLoadManager实现安装包更新，安装包缓存，支持MD5校验，支持断点续传，自定义UI，提供了默认UI。
 
 
 ## 演示
-按照惯例还是先上图吧。从图片中你可以看出apk是做了缓存的，也就是下载完成后如果没有安装下次再次检查更新时如果发现服务端的版本和缓存的版本一致则会跳过下载。
+按照惯例还是先上图吧。从图片中你可以看出apk是做了缓存的，也就是下载完成后如果没有安装下次再次检查更新时如果发现服务端的版本和缓存的版本一致且MD5值一致则会跳过下载，直接安装。
 
 ![demonstrate](materials/gif_apk_updater.gif)
 
@@ -20,7 +20,7 @@ allprojects {
 ###### 第二步：添加这个依赖。
 ```
 dependencies {
-    compile 'com.github.kelinZhou:ApkUpdater:1.5.2'
+    implementation 'com.github.kelinZhou:ApkUpdater:1.7.0'
 }
 ```
 
@@ -63,13 +63,17 @@ dependencies {
 ###### 获取更新信息
 首先利用你项目的网络访问能力从服务器端获取更新信息并转换为**javaBean**对象，然后让这个对象实现**UpdateInfo**接口。下面是这个接口中所有方法：
 ```
-public interface UpdateInfo {
-
-    /**
+/**
      * 获取网络上的版本号。
      * @return 返回当前对象的版本号字段的值。
      */
     int getVersionCode();
+
+    /**
+     * 获取网络上的版本名称。
+     * @return 返回当前对象的版本名称字段的值。
+     */
+    String getVersionName();
 
     /**
      * 获取最新版本的下载链接。
@@ -102,6 +106,12 @@ public interface UpdateInfo {
      * @return 返回你本次更新的内容。
      */
     CharSequence getUpdateMessage();
+
+    /**
+     * 获取网络上最新安装包的MD5值，用户校验下载后的安装包是否完整以及是否修改等。
+     * @return 如果你希望使用MD5校验则返回网络上最近安装包的MD5值，如果返回null这表示不进行MD5校验。
+     */
+    @Nullable String getMd5();
 }
 ```
 ###### 构建**Updater**对象
