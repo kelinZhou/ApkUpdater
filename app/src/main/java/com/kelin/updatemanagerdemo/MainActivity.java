@@ -7,7 +7,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.kelin.apkUpdater.Updater;
-import com.kelin.apkUpdater.callback.UpdateCallback;
+import com.kelin.apkUpdater.callback.CompleteUpdateCallback;
 
 import java.io.File;
 
@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_check_update).setOnClickListener(this);
 
         mUpdater = new Updater.Builder(this)
-                .setCallback(new ApkUpdateCallback())
+                .setCallback(new ApkCompleteUpdateCallback())
                 .setCheckWiFiState(true)
                 .builder();
     }
@@ -33,8 +33,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mUpdater.check(new UpdateModel());
     }
 
-    private class ApkUpdateCallback extends UpdateCallback {
-        private static final String TAG = "ApkUpdateCallback";
+    private class ApkCompleteUpdateCallback extends CompleteUpdateCallback {
+        private static final String TAG = "ApkCompleteUpdateCallback";
 
         /**
          * 开始下载，在开始执行下载的时候调用。
@@ -63,45 +63,45 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
          * @param isCache 是否是缓存，如果改参数为true说明本次并没有真正的执行下载任务，因为上一次用户下载完毕后并没有进行
          */
         @Override
-        public void onLoadSuccess(File apkFile, boolean isCache) {
-            Log.i(TAG, "onLoadSuccess: 下载成功：downUri=" + apkFile + "|是否是缓存？" + (isCache ? "是" : "否"));
-        }
-
-        /**
-         * 当下载失败的时候调用。
-         */
-        @Override
-        public void onLoadFailed() {
-            Log.i(TAG, "onLoadFailed: 下载失败。");
+        public void onDownloadSuccess(File apkFile, boolean isCache) {
+            Log.i(TAG, "onDownloadSuccess: 下载成功：downUri=" + apkFile + "|是否是缓存？" + (isCache ? "是" : "否"));
         }
 
         /**
          * 下载暂停。
          */
         @Override
-        public void onLoadPaused() {
-            Log.i(TAG, "onLoadPaused: 下载被暂停。");
+        public void onDownloadPaused() {
+            Log.i(TAG, "onDownloadPaused: 下载被暂停。");
         }
 
         /**
          * 等待下载。
          */
         @Override
-        public void onLoadPending() {
-            Log.i(TAG, "onLoadPending: 等待下载。");
+        public void onDownloadPending() {
+            Log.i(TAG, "onDownloadPending: 等待下载。");
         }
 
         /**
          * 当下载被取消后调用。即表明用户不想进行本次更新，强制更新一般情况下是不能取消的，除非你设置了需要检查WIFI而WIFI又没有链接。
          */
         @Override
-        public void onLoadCancelled() {
-            Log.i(TAG, "onLoadCancelled: 下载被取消。");
+        public void onDownloadCancelled() {
+            Log.i(TAG, "onDownloadCancelled: 下载被取消。");
         }
 
         @Override
         public void onInstallFailed() {
             super.onInstallFailed();
+        }
+
+        /**
+         * 当下载失败的时候调用。
+         */
+        @Override
+        public void onDownloadFailed(int checkMD5FailedCount) {
+            Log.i(TAG, "onDownloadFailed: 下载失败。");
         }
 
         /**
@@ -116,12 +116,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
          * @param successful     本次检测更新是否是成功的。这里的说所的成功的意思就是即检测到了新的版本且下载的安装包是有效且可以安装的。
          */
         @Override
-        public void onCompleted(boolean haveNewVersion, String curVersionName, boolean successful, boolean isForceUpdate) {
+        public void onCompleted(boolean haveNewVersion, String curVersionName, boolean successful, int checkMD5FailedCount, boolean isForceUpdate) {
             Log.i(TAG, "onCompleted: 完成。");
             if (!haveNewVersion) {
                 Toast.makeText(getApplicationContext(), "当前已是最新版本：" + curVersionName, Toast.LENGTH_SHORT).show();
-            } else if (!successful && isForceUpdate) {
-                Toast.makeText(getApplicationContext(), "您必须升级后才能继续使用！" + curVersionName, Toast.LENGTH_SHORT).show();
+            } else if (!successful) {
+                if (checkMD5FailedCount >= 3) {
+                    Toast.makeText(getApplicationContext(), "您当前的网络环境可能有问题导致下载一直丢包，请切换新的网络环境后再试！" + curVersionName, Toast.LENGTH_SHORT).show();
+                }else {
+                    Toast.makeText(getApplicationContext(), "下载失败！" + curVersionName, Toast.LENGTH_SHORT).show();
+                }
+                if (isForceUpdate) {
+                    Toast.makeText(getApplicationContext(), "您必须升级后才能继续使用！" + curVersionName, Toast.LENGTH_SHORT).show();
+                }
             }
         }
     }

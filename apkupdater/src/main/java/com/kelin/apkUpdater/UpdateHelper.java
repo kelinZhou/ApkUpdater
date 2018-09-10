@@ -11,7 +11,6 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.content.FileProvider;
 import android.webkit.MimeTypeMap;
-import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,11 +33,15 @@ public class UpdateHelper {
     /**
      * apk 文件存储路径
      */
-    private static final String SP_KEY_DOWNLOAD_APK_PATH = "com.kelin.apkUpdater.apkPath";
+    private static final String SP_KEY_DOWNLOAD_APK_PATH = "com.kelin.apkUpdater.sp_key_download_apk_path";
     /**
      * 上一次下载的APK的版本号。
      */
-    private static final String SP_KEY_DOWNLOAD_APK_VERSION_CODE = "com.kelin.apkUpdater.apkVersionCode";
+    private static final String SP_KEY_DOWNLOAD_APK_VERSION_CODE = "com.kelin.apkUpdater.sp_key_download_apk_version_code";
+    /**
+     * 用来获取下载Apk失败的次数。
+     */
+    private static final String SP_KEY_DOWN_LOAD_APK_FAILED_COUNT = "com.kelin.apkUpadater.sp_key_down_load_apk_failed_count";
 
     /**
      * 判断当前版本是否是强制更新。
@@ -150,6 +153,19 @@ public class UpdateHelper {
                 getEdit(context).remove(SP_KEY_DOWNLOAD_APK_VERSION_CODE);
             }
         }
+    }
+
+    static void clearDownloadFailedCount(@NonNull Context context) {
+        getEdit(context).remove(SP_KEY_DOWN_LOAD_APK_FAILED_COUNT);
+    }
+
+    static void downloadFailedCountPlus(@NonNull Context context) {
+        int failedCount = getDownloadFailedCount(context);
+        getEdit(context).putInt(SP_KEY_DOWN_LOAD_APK_FAILED_COUNT, failedCount + 1).commit();
+    }
+
+    static int getDownloadFailedCount(@NonNull Context context) {
+        return context.getSharedPreferences(CONFIG_NAME, Context.MODE_PRIVATE).getInt(SP_KEY_DOWN_LOAD_APK_FAILED_COUNT, 0);
     }
 
     static void putApkPath2Sp(Context context, String value) {
