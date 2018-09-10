@@ -80,6 +80,9 @@ public abstract class UpdateCallback implements DownloadProgressCallback {
      * 该方法，如果检查更新失败也会执行该方法，如果检测到了新的版本的话，那么这个方法就不会再检查更新阶段调用，一直
      * 等到下载完成或下载失败之后才会被执行。
      *
+     * 你可能会疑惑明明已经有{@link #onLoadFailed()}方法了为什么失败后还会执行该方法。这里我要做下说明：
+     * 这样做的想法有点复杂，暂时不知道用短短几句话描述，所以就先不做解释了。
+     *
      * @param haveNewVersion 是否有新的版本。
      *                       <code color="blue">true</code>表示有新的版本,
      *                       <code color="blue">false</code>则表示没有新的版本。
