@@ -24,7 +24,7 @@ public class UpdateModel implements UpdateInfo {
 
     @Override
     public String getDownLoadsUrl() {
-        return "https://i.jihui.io/o_1cmk7b7k01hju1kgg1b3i1vd4eoh54.apk";
+        return "https://qd.myapp.com/myapp/qqteam/AndroidQQ/mobileqq_android.apk";
     }
 
     @Override

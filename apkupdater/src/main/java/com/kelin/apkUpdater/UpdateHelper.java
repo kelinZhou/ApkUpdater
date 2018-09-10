@@ -149,14 +149,14 @@ public class UpdateHelper {
 
         if (apkFile.exists() && apkFile.isFile()) {
             if (apkFile.delete()) {
-                getEdit(context).remove(SP_KEY_DOWNLOAD_APK_PATH);
-                getEdit(context).remove(SP_KEY_DOWNLOAD_APK_VERSION_CODE);
+                getEdit(context).remove(SP_KEY_DOWNLOAD_APK_PATH).commit();
+                getEdit(context).remove(SP_KEY_DOWNLOAD_APK_VERSION_CODE).commit();
             }
         }
     }
 
     static void clearDownloadFailedCount(@NonNull Context context) {
-        getEdit(context).remove(SP_KEY_DOWN_LOAD_APK_FAILED_COUNT);
+        getEdit(context).remove(SP_KEY_DOWN_LOAD_APK_FAILED_COUNT).commit();
     }
 
     static void downloadFailedCountPlus(@NonNull Context context) {

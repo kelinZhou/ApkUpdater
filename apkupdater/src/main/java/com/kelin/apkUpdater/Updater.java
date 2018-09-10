@@ -579,12 +579,18 @@ public final class Updater {
         }
     }
 
+    /**
+     * 校验MD5值，如果调用者的{@link UpdateInfo#getMd5()}方法返回了不为空的字符，均认为调用者提供了正确的MD5，那么
+     * 将会对这个MD5值与当前apk文件的MD5进行校验。
+     * @param apkFile 当前的apk文件。
+     * @return 如果当前文件存在且正确的MD5值与当前文件的MD5值匹配或则用户没有提供MD5(不需要MD5校验)则返回true， 否则返回false。
+     */
     private boolean checkFileMD5(File apkFile) {
         if (!apkFile.exists()) {
             return false;
         } else {
             String availableMd5 = mUpdateInfo.getMd5();
-            return availableMd5 == null || TextUtils.equals(availableMd5, UpdateHelper.getFileMD5(apkFile));
+            return TextUtils.isEmpty(availableMd5) || TextUtils.equals(availableMd5, UpdateHelper.getFileMD5(apkFile));
         }
     }
 
