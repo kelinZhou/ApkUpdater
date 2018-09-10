@@ -1,5 +1,6 @@
 package com.kelin.apkUpdater.util;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -31,6 +32,7 @@ public class NetWorkStateUtil {
      * @param context 上下文。
      * @return true 表示当前网络处于连接状态，且是WIFI，否则返回false。
      */
+    @SuppressLint("MissingPermission")
     public static boolean isWifiConnected(Context context) {
         NetworkInfo info = getConnectivityManager(context).getActiveNetworkInfo();
         return info != null && info.isConnected() && ConnectivityManager.TYPE_WIFI == info.getType();
@@ -42,6 +44,7 @@ public class NetWorkStateUtil {
      * @param context 上下文。
      * @return true 表示当前网络处于连接状态，且是GPRS，否则返回false。
      */
+    @SuppressLint("MissingPermission")
     public static boolean isGprsConnected(Context context) {
         NetworkInfo info = getConnectivityManager(context).getActiveNetworkInfo();
         return info != null && info.isConnected() && ConnectivityManager.TYPE_MOBILE == info.getType();
@@ -53,6 +56,7 @@ public class NetWorkStateUtil {
      * @param context 上下文。
      * @return true 表示当前网络处于连接状态，否则返回false。
      */
+    @SuppressLint("MissingPermission")
     public static boolean isConnected(Context context) {
         NetworkInfo info = getConnectivityManager(context).getActiveNetworkInfo();
         return info != null && info.isConnected();
@@ -66,6 +70,29 @@ public class NetWorkStateUtil {
      */
     public static boolean isActiveNetworkMetered(Context context) {
         return ConnectivityManagerCompat.isActiveNetworkMetered(getConnectivityManager(context));
+    }
+
+    /**
+     * 移动流量开关是否被打开。
+     *
+     * @param context 上下文。
+     * @return 返回true表示流量是开启的，false表示是关闭的。注意开启并不代表当前的网络连接就是移动流量，只是单单开启了开关而已。
+     */
+    @SuppressLint("PrivateApi")
+    public static boolean isMobileEnabled(Context context) {
+        try {
+            Method getMobileDataEnabledMethod = ConnectivityManager.class.getDeclaredMethod("getMobileDataEnabled");
+            getMobileDataEnabledMethod.setAccessible(true);
+            return (Boolean) getMobileDataEnabledMethod.invoke(getConnectivityManager(context));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // 反射失败，默认开启
+        return true;
+    }
+
+    private static ConnectivityManager getConnectivityManager(Context context) {
+        return (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
     }
 
     /**
@@ -147,27 +174,5 @@ public class NetWorkStateUtil {
          *             成功的是WiFi，如果为 {@link ConnectivityManager#TYPE_MOBILE} 则说明当前链接成功的是流量。
          */
         protected abstract void onConnected(int type);
-    }
-
-    /**
-     * 移动流量开关是否被打开。
-     *
-     * @param context 上下文。
-     * @return 返回true表示流量是开启的，false表示是关闭的。注意开启并不代表当前的网络连接就是移动流量，只是单单开启了开关而已。
-     */
-    public static boolean isMobileEnabled(Context context) {
-        try {
-            Method getMobileDataEnabledMethod = ConnectivityManager.class.getDeclaredMethod("getMobileDataEnabled");
-            getMobileDataEnabledMethod.setAccessible(true);
-            return (Boolean) getMobileDataEnabledMethod.invoke(getConnectivityManager(context));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        // 反射失败，默认开启
-        return true;
-    }
-
-    private static ConnectivityManager getConnectivityManager(Context context) {
-        return (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
     }
 }

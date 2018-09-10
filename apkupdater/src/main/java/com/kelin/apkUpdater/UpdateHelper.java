@@ -41,6 +41,29 @@ public class UpdateHelper {
     private static final String SP_KEY_DOWNLOAD_APK_VERSION_CODE = "com.kelin.apkUpdater.apkVersionCode";
 
     /**
+     * 判断当前版本是否是强制更新。
+     *
+     * @return 如果是返回true，否则返回false。
+     */
+    public static boolean isForceUpdate(@NonNull UpdateInfo updateInfo, @NonNull Context context) {
+        if (!updateInfo.isForceUpdate()) {
+            return false;
+        } else {
+            int[] codes = updateInfo.getForceUpdateVersionCodes();
+            if (codes == null || codes.length == 0) {
+                return true;
+            } else {
+                for (int code : codes) {
+                    if (getCurrentVersionCode(context) == code) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+    }
+
+    /**
      * 获取当前的版本号。
      *
      * @param context 需要一个上下文。

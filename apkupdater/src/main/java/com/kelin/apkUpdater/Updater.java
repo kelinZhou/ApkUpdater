@@ -21,8 +21,6 @@ import com.kelin.apkUpdater.dialog.InformDialogParams;
 import com.kelin.apkUpdater.util.NetWorkStateUtil;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -44,7 +42,7 @@ public final class Updater {
     private UpdateInfo mUpdateInfo;
     private boolean mHaveNewVersion;
     private boolean mIsChecked;
-    private static int sLocalVersionCode = 0xffff_ffff;
+    private int mLocalVersionCode = 0xffff_ffff;
     private boolean mAutoInstall = true;
     private NetWorkStateChangedReceiver mNetWorkStateChangedReceiver;
     private OnLoadProgressListener mOnProgressListener;
@@ -114,38 +112,15 @@ public final class Updater {
      *
      * @return 如果是返回true，否则返回false。
      */
-    public static boolean isForceUpdate(@NonNull UpdateInfo updateInfo, @NonNull Context context) {
-        if (!updateInfo.isForceUpdate()) {
-            return false;
-        } else {
-            int[] codes = updateInfo.getForceUpdateVersionCodes();
-            if (codes == null || codes.length == 0) {
-                return true;
-            } else {
-                for (int code : codes) {
-                    if (getLocalVersionCode(context) == code) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        }
-    }
-
-    /**
-     * 判断当前版本是否是强制更新。
-     *
-     * @return 如果是返回true，否则返回false。
-     */
     private boolean isForceUpdate(@NonNull UpdateInfo updateInfo) {
-        return isForceUpdate(updateInfo, mApplicationContext);
+        return UpdateHelper.isForceUpdate(updateInfo, mApplicationContext);
     }
 
-    private static int getLocalVersionCode(Context context) {
-        if (sLocalVersionCode == 0xffff_ffff) {
-            sLocalVersionCode = UpdateHelper.getCurrentVersionCode(context);
+    private int getLocalVersionCode(Context context) {
+        if (mLocalVersionCode == 0xffff_ffff) {
+            mLocalVersionCode = UpdateHelper.getCurrentVersionCode(context);
         }
-        return sLocalVersionCode;
+        return mLocalVersionCode;
     }
 
     /**
