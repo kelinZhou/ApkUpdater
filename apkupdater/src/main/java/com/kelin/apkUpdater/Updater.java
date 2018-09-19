@@ -183,7 +183,7 @@ public final class Updater {
         boolean haveNewVersion = updateInfo.getVersionCode() > getLocalVersionCode(mApplicationContext);
         if (!NetWorkStateUtil.isConnected(mApplicationContext)) {
             if (mCallback != null) {
-                mCallback.onCompleted(haveNewVersion, UpdateHelper.getCurrentVersionName(mApplicationContext), false, 0, isForceUpdate(mUpdateInfo));
+                mCallback.onCompleted(haveNewVersion, UpdateHelper.getCurrentVersionName(mApplicationContext), false, 0, isForceUpdate(updateInfo));
             }
             return;
         }
@@ -193,7 +193,7 @@ public final class Updater {
                     if (getCompleteUpdateCallback() != null) {
                         getCompleteUpdateCallback().onDownloadFailed(0);
                     }
-                    mCallback.onCompleted(haveNewVersion, UpdateHelper.getCurrentVersionName(mApplicationContext), false, 0, isForceUpdate(mUpdateInfo));
+                    mCallback.onCompleted(haveNewVersion, UpdateHelper.getCurrentVersionName(mApplicationContext), false, 0, isForceUpdate(updateInfo));
                 }
                 return;
             }
