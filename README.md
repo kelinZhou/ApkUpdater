@@ -20,7 +20,7 @@ allprojects {
 ###### 第二步：添加这个依赖。
 ```
 dependencies {
-    implementation 'com.github.kelinZhou:ApkUpdater:1.7.0'
+    implementation 'com.github.kelinZhou:ApkUpdater:2.0.1'
 }
 ```
 
