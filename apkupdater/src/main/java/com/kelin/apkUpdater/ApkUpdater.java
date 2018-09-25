@@ -35,9 +35,6 @@ import java.util.Locale;
  */
 public final class ApkUpdater {
     private final Builder mBuilder;
-    /**
-     * 下载的监听回调对象。
-     */
     private IUpdateCallback mCallback;
     private boolean isBindService;
     private ServiceConnection conn;
@@ -69,16 +66,8 @@ public final class ApkUpdater {
             throw new IllegalStateException("your must call ApkUpdater.init(context) method!");
         }
         mBuilder = builder;
+        mCallback = mBuilder.callback;
         mDefaultDialog = new DefaultDialog();
-    }
-
-    /**
-     * 设置监听对象。
-     *
-     * @param callback 监听回调对象。
-     */
-    public void setCallback(IUpdateCallback callback) {
-        mCallback = callback;
     }
 
     /**
@@ -124,7 +113,7 @@ public final class ApkUpdater {
      */
     public void silentDownload() {
         if (mCallback != null) {
-            mCallback.onSilentDownload();
+            mCallback.onSilentDownload(this);
         }
     }
 
@@ -168,7 +157,7 @@ public final class ApkUpdater {
         } else {
             if (mBuilder.dialogCallback != null) {
                 mDefaultDialog.dismissAll();
-                mBuilder.dialogCallback.onShowProgressDialog(isForceUpdate(mUpdateInfo));
+                mBuilder.dialogCallback.onShowProgressDialog(this, isForceUpdate(mUpdateInfo));
             } else {
                 throw new IllegalArgumentException("you mast call ApkUpdater's \"setCallback(CompleteUpdateCallback callback)\" Method。");
             }
@@ -479,6 +468,10 @@ public final class ApkUpdater {
         private final InformDialogParams informDialogConfig = new InformDialogParams();
         private final DownloadDialogParams loadDialogConfig = new DownloadDialogParams();
         /**
+         * 用来配置下载的监听回调对象。
+         */
+        IUpdateCallback callback;
+        /**
          * 通知栏的标题。
          */
         CharSequence mTitle;
@@ -497,6 +490,16 @@ public final class ApkUpdater {
         private DialogEventCallback dialogCallback;
 
         public Builder() {
+        }
+
+        /**
+         * 设置监听对象。
+         *
+         * @param callback 监听回调对象。
+         */
+        public Builder setCallback(IUpdateCallback callback) {
+            this.callback = callback;
+            return this;
         }
 
         /**
@@ -670,7 +673,7 @@ public final class ApkUpdater {
                 getCompleteUpdateCallback().onProgress(total, current, percentage);
             }
             if (mBuilder.dialogCallback != null) {
-                mBuilder.dialogCallback.onProgress(total, current, percentage);
+                mBuilder.dialogCallback.onProgress(ApkUpdater.this, total, current, percentage);
             }
             if (!mBuilder.noDialog) {
                 updateProgressDialog(percentage);

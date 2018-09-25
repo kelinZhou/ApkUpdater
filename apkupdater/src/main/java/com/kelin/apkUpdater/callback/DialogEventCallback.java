@@ -29,14 +29,14 @@ public interface DialogEventCallback {
      * <p>也有可能这个方法会调用不止一次，如果你在构建 {@link ApkUpdater.Builder} 的时候没有调用
      * {@link ApkUpdater.Builder#setCheckWiFiState(boolean)}方法改变检测网络状态的话默认是会检测WIFI状态的。当WIFI状态改变的时候
      * 有可能会再次调用该方法，所以这里你要做好相应的判断，以避免Dialog会显示多次。
-     * <p>这里只是单纯的做显示对话的操作，无需做其他任何处理，进度条的更新需要在{@link #onProgress(long, long, int)}方法中处理，
-     * 您需要覆盖{@link #onProgress(long, long, int)}方法。
+     * <p>这里只是单纯的做显示对话的操作，无需做其他任何处理，进度条的更新需要在{@link #onProgress(ApkUpdater, long, long, int)}方法中处理，
+     * 您需要覆盖{@link #onProgress(ApkUpdater, long, long, int)}方法。
      *
      * @param isForce 是否是强制更新。
      * @see ApkUpdater.Builder#setCheckWiFiState(boolean)
-     * @see #onProgress(long, long, int)
+     * @see #onProgress(ApkUpdater, long, long, int)
      */
-    void onShowProgressDialog(boolean isForce);
+    void onShowProgressDialog(ApkUpdater updater,boolean isForce);
 
     /**
      * 下载进度更新的时候调用。如果您是自定义的UI交互的话您需要覆盖此方法，并在此方法中做更新进度的操作。
@@ -46,5 +46,5 @@ public interface DialogEventCallback {
      * @param current    当前的进度(字节)。
      * @param percentage 当前下载进度的百分比。
      */
-    void onProgress(long total, long current, int percentage);
+    void onProgress(ApkUpdater updater,long total, long current, int percentage);
 }

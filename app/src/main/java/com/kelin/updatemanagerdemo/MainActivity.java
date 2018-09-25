@@ -2,6 +2,7 @@ package com.kelin.updatemanagerdemo;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Toast;
@@ -22,9 +23,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_check_update).setOnClickListener(this);
 
         mUpdater = new ApkUpdater.Builder()
+                .setCallback(new ApkCompleteUpdateCallback())
                 .setCheckWiFiState(true)
                 .builder();
-        mUpdater.setCallback(new ApkCompleteUpdateCallback());
     }
 
     @Override
@@ -43,9 +44,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         private static final String TAG = "ApkCompleteUpdateCallback";
 
         @Override
-        public void onSilentDownload() {
+        public void onSilentDownload(@NonNull ApkUpdater apkUpdater) {
             Toast.makeText(getApplicationContext(), "静默下载", Toast.LENGTH_SHORT).show();
-            //mUpdater.removeCallback();  如果在用户点击静默安装之后不希望在监听后续的回调，则可以调用该方法。
+            //apkUpdater.removeCallback();  //如果在用户点击静默安装之后不希望在监听后续的回调，则可以调用该方法。
         }
 
         @Override
