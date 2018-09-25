@@ -3,20 +3,16 @@ package com.kelin.updatemanagerdemo;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
-import com.kelin.apkUpdater.Updater;
-import com.kelin.apkUpdater.callback.CompleteUpdateCallback;
+import com.kelin.apkUpdater.ApkUpdater;
 import com.kelin.apkUpdater.callback.IUpdateCallback;
-
-import java.io.File;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
 
-    private Updater mUpdater;
+    private ApkUpdater mUpdater;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,7 +21,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.tv_content).setOnClickListener(this);
         findViewById(R.id.btn_check_update).setOnClickListener(this);
 
-        mUpdater = new Updater.Builder()
+        mUpdater = new ApkUpdater.Builder()
                 .setCallback(new ApkCompleteUpdateCallback())
                 .setCheckWiFiState(true)
                 .builder();

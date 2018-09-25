@@ -2,7 +2,7 @@ package com.kelin.updatemanagerdemo;
 
 import android.app.Application;
 
-import com.kelin.apkUpdater.Updater;
+import com.kelin.apkUpdater.ApkUpdater;
 import com.squareup.leakcanary.LeakCanary;
 
 /**
@@ -18,7 +18,7 @@ public class App extends Application {
         if (!LeakCanary.isInAnalyzerProcess(this)) {
             LeakCanary.install(this);
         }
-        Updater.init(this);
+        ApkUpdater.init(this);
         super.onCreate();
     }
 }

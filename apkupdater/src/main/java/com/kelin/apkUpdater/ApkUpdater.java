@@ -33,7 +33,7 @@ import java.util.Locale;
  * 创建时间 2017/3/13  下午2:32
  * 版本 v 1.0.0
  */
-public final class Updater {
+public final class ApkUpdater {
     private final Builder mBuilder;
     private final IUpdateCallback mCallback;
     private boolean isBindService;
@@ -60,10 +60,10 @@ public final class Updater {
     /**
      * 私有构造函数，防止其他类创建本类对象。
      */
-    private Updater(Builder builder) {
+    private ApkUpdater(Builder builder) {
         mApplicationContext = ActivityStackManager.getInstance().getApplicationContext();
         if (mApplicationContext == null) {
-            throw new IllegalStateException("your must call Updater.init(context) method!");
+            throw new IllegalStateException("your must call ApkUpdater.init(context) method!");
         }
         mBuilder = builder;
         mCallback = mBuilder.callback;
@@ -152,7 +152,7 @@ public final class Updater {
                 mDefaultDialog.dismissAll();
                 mBuilder.dialogCallback.onShowProgressDialog(isForceUpdate(mUpdateInfo));
             } else {
-                throw new IllegalArgumentException("you mast call Updater's \"setCallback(CompleteUpdateCallback callback)\" Method。");
+                throw new IllegalArgumentException("you mast call ApkUpdater's \"setCallback(CompleteUpdateCallback callback)\" Method。");
             }
         }
     }
@@ -259,9 +259,9 @@ public final class Updater {
             showUpdateInformDialog();
         } else {
             if (mBuilder.dialogCallback != null) {
-                mBuilder.dialogCallback.onShowCheckHintDialog(Updater.this, mUpdateInfo, isForceUpdate(mUpdateInfo));
+                mBuilder.dialogCallback.onShowCheckHintDialog(ApkUpdater.this, mUpdateInfo, isForceUpdate(mUpdateInfo));
             } else {
-                throw new IllegalArgumentException("you mast call Updater's \"setCallback(CompleteUpdateCallback callback)\" Method。");
+                throw new IllegalArgumentException("you mast call ApkUpdater's \"setCallback(CompleteUpdateCallback callback)\" Method。");
             }
         }
     }
@@ -577,12 +577,12 @@ public final class Updater {
         }
 
         /**
-         * 构建 {@link Updater} 对象。
+         * 构建 {@link ApkUpdater} 对象。
          *
-         * @return 返回一个构建好的 {@link Updater} 对象。
+         * @return 返回一个构建好的 {@link ApkUpdater} 对象。
          */
-        public Updater builder() {
-            return new Updater(this);
+        public ApkUpdater builder() {
+            return new ApkUpdater(this);
         }
     }
 

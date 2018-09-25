@@ -11,7 +11,6 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import com.kelin.apkUpdater.R;
-import com.kelin.apkUpdater.Updater;
 import com.kelin.apkUpdater.util.ActivityStackManager;
 
 import java.util.Locale;

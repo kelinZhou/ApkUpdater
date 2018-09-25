@@ -1,7 +1,7 @@
 package com.kelin.apkUpdater.callback;
 
 import com.kelin.apkUpdater.UpdateInfo;
-import com.kelin.apkUpdater.Updater;
+import com.kelin.apkUpdater.ApkUpdater;
 
 import java.io.File;
 
@@ -17,7 +17,7 @@ public abstract class CompleteUpdateCallback implements IUpdateCallback {
     /**
      * 当用户需要静默下载的时候调用。通常情况下该方法不会执行，如果你使用了我所提供的Dialog(没有自定义Dialog的话)，在非强制更新的时候
      * 下载进度Dialog上会有一个名为悄悄下载的按钮，点击这个按钮后就会执行该方法。
-     * 如果你使用了自定义Dialog的话你可以在用户希望静默下载的时候调用 {@link Updater#silentDownload()} 方法，这样的话该回调也会被执行。
+     * 如果你使用了自定义Dialog的话你可以在用户希望静默下载的时候调用 {@link ApkUpdater#silentDownload()} 方法，这样的话该回调也会被执行。
      */
     @Override
     public void onSilentDownload() {}
@@ -49,7 +49,7 @@ public abstract class CompleteUpdateCallback implements IUpdateCallback {
 
     /**
      * 当下载被取消后调用。即表明用户不想进行本次更新，强制更新一般情况下是不能取消的，
-     * 除非你调用了{@link com.kelin.apkUpdater.Updater.Builder#setCheckWiFiState(boolean)}方法并将参数设置为true，
+     * 除非你调用了{@link ApkUpdater.Builder#setCheckWiFiState(boolean)}方法并将参数设置为true，
      * 这就意味着你希望在用户的网络为4G网络的时候提醒用户，而这个提醒之后用户是可以取消下载的，当用户取消下载之后就会执行该方法。
      */
     public void onDownloadCancelled() {
