@@ -150,9 +150,49 @@ CharSequence getUpdateMessage();
 |public Builder setDownloadDialogMessage(String message)|配置下载更新时对话框的消息。|
 |public Builder setNotifyTitle(CharSequence title)|设置通知栏的标题。（强制更新时是没有通知栏通知的。）|
 |public Builder setNotifyDescription(CharSequence description)|设置通知栏的描述。（强制更新时是没有通知栏通知的。）|
-|public Builder setNoDialog()|如果你希望自己创建对话框，而不使用默认提供的对话框，可以调用该方法将默认的对话框关闭。如果你关闭了默认的对话框的话就必须自己实现UI交互，并且在用户更新提示做出反应的时候调用 ```updater.setCheckHandlerResult(boolean)``` 方法。实现UI交互的时机都在回调中。|
+|public Builder setNoDialog(@NonNull DialogEventCallback callback)|如果你希望自己创建对话框，而不使用默认提供的对话框，可以调用该方法将默认的对话框关闭。如果你关闭了默认的对话框的话就必须自己实现UI交互，并且在用户更新提示做出反应的时候调用 ```updater.setCheckHandlerResult(boolean)``` 方法。实现UI交互的时机都在DialogEventCallback的回调中。|
 |public Builder setCheckWiFiState(boolean check)|设置不检查WiFi状态，默认是检查WiFi状态的，也就是说如果在下载更新的时候如果没有链接WiFi的话默认是会提示用户的。但是如果你不希望给予提示，就可以通过调用此方法，禁用WiFi检查。|
 |public Updater builder()|完成**Updater**对象的构建。|
+#### 自定义Dialog
+通过ApkUpdater.Builder.setNoDialog(@NonNull DialogEventCallback callback)方法设置回调后只需要覆盖回调中的抽象方法即可，下面是这个接口中的所有方法：
+```java
+public interface DialogEventCallback {
+
+    /**
+     * 当需要显示检查更新提示对话框的时候调用。你需要在这里进行检查更新提示对话框的显示。
+     * 在用户做出相应的操作后，你应当调用{@link ApkUpdater#setCheckHandlerResult(boolean)}方法进行下一步的操作。
+     *
+     * @param updater {@link ApkUpdater}对象。
+     * @param isForce 是否是强制更新。
+     * @see ApkUpdater#setCheckHandlerResult(boolean)
+     */
+    void onShowCheckHintDialog(ApkUpdater updater, @NonNull UpdateInfo updateInfo, boolean isForce);
+
+    /**
+     * 当需要加载下载进度对话框的时候调用，你需要在这做显示下载进度对话框的操作。
+     * <p>也有可能这个方法会调用不止一次，如果你在构建 {@link ApkUpdater.Builder} 的时候没有调用
+     * {@link ApkUpdater.Builder#setCheckWiFiState(boolean)}方法改变检测网络状态的话默认是会检测WIFI状态的。当WIFI状态改变的时候
+     * 有可能会再次调用该方法，所以这里你要做好相应的判断，以避免Dialog会显示多次。
+     * <p>这里只是单纯的做显示对话的操作，无需做其他任何处理，进度条的更新需要在{@link #onProgress(ApkUpdater, long, long, int)}方法中处理，
+     * 您需要覆盖{@link #onProgress(ApkUpdater, long, long, int)}方法。
+     *
+     * @param isForce 是否是强制更新。
+     * @see ApkUpdater.Builder#setCheckWiFiState(boolean)
+     * @see #onProgress(ApkUpdater, long, long, int)
+     */
+    void onShowProgressDialog(ApkUpdater updater,boolean isForce);
+
+    /**
+     * 下载进度更新的时候调用。如果您是自定义的UI交互的话您需要覆盖此方法，并在此方法中做更新进度的操作。
+     * 您还需要在进度完成后进行销毁dialog的操作。
+     *
+     * @param total      文件总大小(字节)。
+     * @param current    当前的进度(字节)。
+     * @param percentage 当前下载进度的百分比。
+     */
+    void onProgress(ApkUpdater updater,long total, long current, int percentage);
+}
+```
 #### 检查更新
 检查更新的代码如下：
 ````
