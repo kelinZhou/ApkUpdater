@@ -226,6 +226,13 @@ public final class ApkUpdater {
             throw new IllegalArgumentException("Because you neither set up to monitor installed automatically, so the check update is pointless.");
         }
         boolean haveNewVersion = updateInfo.getVersionCode() > getLocalVersionCode(mApplicationContext);
+        if (!haveNewVersion) {
+            if (mCallback != null) {
+                mCallback.onSuccess(isAutoCheck, false, getCurrentVersionName(), false);
+                mCallback.onCompleted();
+            }
+            return;
+        }
         if (!NetWorkStateUtil.isConnected(mApplicationContext)) {
             if (mCallback != null) {
                 mCallback.onFiled(isAutoCheck, false, haveNewVersion, getCurrentVersionName(), 0, isForceUpdate(updateInfo));
@@ -245,6 +252,7 @@ public final class ApkUpdater {
                 }
                 return;
             }
+            mHaveNewVersion = true;
             mAutoInstall = autoInstall;
             mIsChecked = true;
             mUpdateInfo = updateInfo;
@@ -259,15 +267,7 @@ public final class ApkUpdater {
             } else {
                 UpdateHelper.removeOldApk(mApplicationContext);
             }
-            if (haveNewVersion) {
-                mHaveNewVersion = true;
-                onShowUpdateInformDialog();
-            } else {
-                if (mCallback != null) {
-                    mCallback.onSuccess(isAutoCheck, false, getCurrentVersionName(), isForceUpdate(mUpdateInfo));
-                    mCallback.onCompleted();
-                }
-            }
+            onShowUpdateInformDialog();
         }
     }
 
