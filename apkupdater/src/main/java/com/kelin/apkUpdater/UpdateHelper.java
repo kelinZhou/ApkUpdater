@@ -1,6 +1,7 @@
 package com.kelin.apkUpdater;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -119,7 +120,7 @@ public class UpdateHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             // 给目标应用一个临时授权
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            Uri uri = FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName() + ".provider", apkFile);
+            Uri uri = FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName() + ".fileProvider", apkFile);
             intent.setDataAndType(uri, context.getContentResolver().getType(uri));
         } else {
             intent.setDataAndType(Uri.fromFile(apkFile), getIntentType(apkFile));
