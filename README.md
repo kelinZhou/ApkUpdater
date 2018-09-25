@@ -59,6 +59,32 @@ dependencies {
 <!--版本更新服务-->
 <service android:name="com.kelin.apkUpdater.DownloadService" />
 ```
+###### 初始化
+你需要在你的Application的onCreate生命周期方法中调用``` ApkUpdater.init(this) ```，如下:
+```
+public class MyApplication extends Application {
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        //……省略N行代码
+        ApkUpdater.init(this);
+    }
+}
+```
+**注意：**别忘记在清单文件中使用你的Application:
+```
+<application
+        android:name=".MyApplication"  //这里是你自定义的Application。
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        
+        <!--此处省略了你的Activity、Service等四大组件-->
+        
+</application>
+```
 
 ###### 获取更新信息
 首先利用你项目的网络访问能力从服务器端获取更新信息并转换为**javaBean**对象，然后让这个对象实现**UpdateInfo**接口。下面是这个接口中所有方法：
