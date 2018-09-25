@@ -90,55 +90,54 @@ public class MyApplication extends Application {
 首先利用你项目的网络访问能力从服务器端获取更新信息并转换为**javaBean**对象，然后让这个对象实现**UpdateInfo**接口。下面是这个接口中所有方法：
 ```
 /**
-     * 获取网络上的版本号。
-     * @return 返回当前对象的版本号字段的值。
-     */
-    int getVersionCode();
+ * 获取网络上的版本号。
+ * @return 返回当前对象的版本号字段的值。
+ */
+int getVersionCode();
 
-    /**
-     * 获取网络上的版本名称。
-     * @return 返回当前对象的版本名称字段的值。
-     */
-    String getVersionName();
+/**
+ * 获取网络上的版本名称。
+ * @return 返回当前对象的版本名称字段的值。
+ */
+String getVersionName();
 
-    /**
-     * 获取最新版本的下载链接。
-     * @return 返回当前对象的下载链接字段的值。
-     */
-    String getDownLoadsUrl();
+/**
+ * 获取最新版本的下载链接。
+ * @return 返回当前对象的下载链接字段的值。
+ */
+String getDownLoadsUrl();
 
-    /**
-     * 是否强制更新。
-     * @return <code color="blue">true</code> 表示强制更新, <code color="blue">false</code> 则相反。
-     */
-    boolean isForceUpdate();
+/**
+ * 是否强制更新。
+ * @return <code color="blue">true</code> 表示强制更新, <code color="blue">false</code> 则相反。
+ */
+boolean isForceUpdate();
 
-    /**
-     * 获取强制更新的版本号，如果你的本次强制更新是针对某个或某些版本的话，你可以在该方法中返回。前提是 {@link #isForceUpdate()}
-     * 返回值必须为true，否则该方法的返回值是没有意义的。
-     * @return 返回你要强制更新的版本号，可以返回 null ，如果返回 null 并且 {@link #isForceUpdate()} 返回 true 的话
-     * 则表示所有版本全部强制更新。
-     */
-    @Nullable int[] getForceUpdateVersionCodes();
+/**
+ * 获取强制更新的版本号，如果你的本次强制更新是针对某个或某些版本的话，你可以在该方法中返回。前提是 {@link #isForceUpdate()}
+ * 返回值必须为true，否则该方法的返回值是没有意义的。
+ * @return 返回你要强制更新的版本号，可以返回 null ，如果返回 null 并且 {@link #isForceUpdate()} 返回 true 的话
+ * 则表示所有版本全部强制更新。
+ */
+@Nullable int[] getForceUpdateVersionCodes();
 
-    /**
-     * 获取Apk文件名(例如 xxx.apk 或 xxx)。后缀名不是必须的。
-     * 可以返回null，如果返回null则默认使用日期作为文件名。
-     */
-    @Nullable String getApkName();
+/**
+ * 获取Apk文件名(例如 xxx.apk 或 xxx)。后缀名不是必须的。
+ * 可以返回null，如果返回null则默认使用日期作为文件名。
+ */
+@Nullable String getApkName();
 
-    /**
-     * 获取更新的内容。就是你本次更新了那些东西可以在这里返回，这里返回的内容会现在是Dialog的消息中，如果你没有禁用Dialog的话。
-     * @return 返回你本次更新的内容。
-     */
-    CharSequence getUpdateMessage();
+/**
+ * 获取更新的内容。就是你本次更新了那些东西可以在这里返回，这里返回的内容会现在是Dialog的消息中，如果你没有禁用Dialog的话。
+ * @return 返回你本次更新的内容。
+ */
+CharSequence getUpdateMessage();
 
-    /**
-     * 获取网络上最新安装包的MD5值，用户校验下载后的安装包是否完整以及是否修改等。
-     * @return 如果你希望使用MD5校验则返回网络上最近安装包的MD5值，如果返回null这表示不进行MD5校验。
-     */
-    @Nullable String getMd5();
-}
+/**
+ * 获取网络上最新安装包的MD5值，用户校验下载后的安装包是否完整以及是否修改等。
+ * @return 如果你希望使用MD5校验则返回网络上最近安装包的MD5值，如果返回null这表示不进行MD5校验。
+ */
+@Nullable String getMd5();
 ```
 #### 构建**Updater**对象
 这个对象是使用构造者模式创建的，可以配置Api提供的Dialog中的Icon、Title、Message以及NotifyCation的Title和Desc。
