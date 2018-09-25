@@ -20,7 +20,7 @@ allprojects {
 ###### 第二步：添加这个依赖。
 ```
 dependencies {
-    implementation 'com.github.kelinZhou:ApkUpdater:2.0.1'
+    implementation 'com.github.kelinZhou:ApkUpdater:2.1.1'
 }
 ```
 
@@ -48,12 +48,12 @@ dependencies {
 <!--Android7.0一上安装Apk所需要的文件提供者-->
 <provider
     android:name="android.support.v4.content.FileProvider"
-    android:authorities="${applicationId}.provider"
+    android:authorities="${applicationId}.fileProvider"
     android:exported="false"
     android:grantUriPermissions="true">
     <meta-data
         android:name="android.support.FILE_PROVIDER_PATHS"
-        android:resource="@xml/com_kelin_apk_updater_file_paths" />
+        android:resource="@xml/apk_updater_file_paths" />
 </provider>
 
 <!--版本更新服务-->
@@ -119,7 +119,7 @@ dependencies {
 
 |方法名|说明|
 |-----|------|
-|public Builder setCallback(UpdateCallback callback)|设置监听对象。|
+|public Builder setCallback(IUpdateCallback callback)|设置监听对象。|
 |public Builder setCheckDialogTitle(CharSequence title)|配置检查更新时对话框的标题。|
 |public Builder setDownloadDialogTitle(CharSequence title)|配置下载更新时对话框的标题。|
 |public Builder setDownloadDialogMessage(String message)|配置下载更新时对话框的消息。|
@@ -135,7 +135,20 @@ private void checkUpdate(UpdateModel updateModel) {
     new Updater.Builder(MainActivity.this).builder().check(updateModel);
 }
 ````
-Updater的check方法除了```public void check(UpdateInfo updateInfo)```还有另外一个重载，```public void check(UpdateInfo updateInfo, boolean autoInstall)```autoInstall参数是指要不要自动安装，如果你只是想下载一个apk文件而不希望立即安装的话则可以将该参数置为false。
+Updater的check方法除了```public void check(UpdateInfo updateInfo)```还有以下两个重载:
+
+1、 
+```
+public void check(@NonNull UpdateInfo updateInfo, boolean isAutoCheck)
+```
+isAutoCheck参数是指是不是自动更新，因为手动更新时如果没有新的版本你总要告诉一下用户，而这个参数将会在回调方法中传递给你。
+
+2、
+```
+public void check(@NonNull UpdateInfo updateInfo, boolean isAutoCheck)
+```
+autoInstall参数是指要不要自动安装，如果你只是想下载一个apk文件而不希望立即安装的话则可以将该参数置为false。
+
 ###### 开始下载
 如果你调用了检查更新的方法这一步是**不需要你手动调用的**，但是如果你只是单纯的想利用API做下载Apk的动作就可以通过此方法执行，代码如下：
 ```
