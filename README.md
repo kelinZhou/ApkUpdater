@@ -8,7 +8,7 @@
 ![demonstrate](materials/gif_apk_updater.gif)
 
 ## 下载
-###### 第一步：添加 JitPack 仓库到你项目根目录的 gradle 文件中。
+#### 第一步：添加 JitPack 仓库到你项目根目录的 gradle 文件中。
 ```
 allprojects {
     repositories {
@@ -17,7 +17,7 @@ allprojects {
     }
 }
 ```
-###### 第二步：添加这个依赖。
+#### 第二步：添加这个依赖。
 ```
 dependencies {
     implementation 'com.github.kelinZhou:ApkUpdater:2.1.1'
@@ -25,7 +25,7 @@ dependencies {
 ```
 
 ## 使用
-###### 添加权限
+#### 添加权限
 你需要在你的清单文件中添加以下权限：
 ```
     <!--网络访问权限-->
@@ -42,7 +42,7 @@ dependencies {
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 ```
 
-###### 清单文件配置
+#### 清单文件配置
 你需要在你清单文件中的**Application**节点下添加如下配置：
 ```
 <!--Android7.0一上安装Apk所需要的文件提供者-->
@@ -59,7 +59,7 @@ dependencies {
 <!--版本更新服务-->
 <service android:name="com.kelin.apkUpdater.DownloadService" />
 ```
-###### 初始化
+#### 初始化
 你需要在你的Application的onCreate生命周期方法中调用``` ApkUpdater.init(this) ```，如下:
 ```
 public class MyApplication extends Application {
@@ -71,7 +71,7 @@ public class MyApplication extends Application {
     }
 }
 ```
-**注意：**别忘记在清单文件中使用你的Application:
+**注意:** 别忘记在清单文件中使用你的Application:
 ```
 <application
         android:name=".MyApplication"  //这里是你自定义的Application。
@@ -86,7 +86,7 @@ public class MyApplication extends Application {
 </application>
 ```
 
-###### 获取更新信息
+#### 获取更新信息
 首先利用你项目的网络访问能力从服务器端获取更新信息并转换为**javaBean**对象，然后让这个对象实现**UpdateInfo**接口。下面是这个接口中所有方法：
 ```
 /**
@@ -140,7 +140,7 @@ public class MyApplication extends Application {
     @Nullable String getMd5();
 }
 ```
-###### 构建**Updater**对象
+#### 构建**Updater**对象
 这个对象是使用构造者模式创建的，可以配置Api提供的Dialog中的Icon、Title、Message以及NotifyCation的Title和Desc。
 
 |方法名|说明|
@@ -154,7 +154,7 @@ public class MyApplication extends Application {
 |public Builder setNoDialog()|如果你希望自己创建对话框，而不使用默认提供的对话框，可以调用该方法将默认的对话框关闭。如果你关闭了默认的对话框的话就必须自己实现UI交互，并且在用户更新提示做出反应的时候调用 ```updater.setCheckHandlerResult(boolean)``` 方法。实现UI交互的时机都在回调中。|
 |public Builder setCheckWiFiState(boolean check)|设置不检查WiFi状态，默认是检查WiFi状态的，也就是说如果在下载更新的时候如果没有链接WiFi的话默认是会提示用户的。但是如果你不希望给予提示，就可以通过调用此方法，禁用WiFi检查。|
 |public Updater builder()|完成**Updater**对象的构建。|
-###### 检查更新
+#### 检查更新
 检查更新的代码如下：
 ````
 private void checkUpdate(UpdateModel updateModel) {
@@ -175,7 +175,7 @@ public void check(@NonNull UpdateInfo updateInfo, boolean isAutoCheck)
 ```
 autoInstall参数是指要不要自动安装，如果你只是想下载一个apk文件而不希望立即安装的话则可以将该参数置为false。
 
-###### 开始下载
+#### 开始下载
 如果你调用了检查更新的方法这一步是**不需要你手动调用的**，但是如果你只是单纯的想利用API做下载Apk的动作就可以通过此方法执行，代码如下：
 ```
 new Updater.Builder(MainActivity.this).builder().download(updateModel);
@@ -187,10 +187,10 @@ new Updater.Builder(MainActivity.this).builder().download(updateModel);
 |public void download(@NonNull UpdateInfo updateInfo)|开始下载。updateInfo：更新信息对象。|
 |public void download(@NonNull UpdateInfo updateInfo, boolean autoInstall)|updateInfo：更新信息对象。autoInstall：是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。|
 |public void download(@NonNull UpdateInfo updateInfo, CharSequence notifyCationTitle, CharSequence notifyCationDesc, boolean autoInstall)|updateInfo：更新信息对象。notifyCationTitle：下载过程中通知栏的标题。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。notifyCationDesc：下载过程中通知栏的描述。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。autoInstall：是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。|
-###### 安装APK
+#### 安装APK
 安装是不许要你关心的，下载完成后会自动进入安装页面。除非你禁用了自动安装，或是想安装一个现有的Apk。如果是这样的话你可以使用**UpdateHelper**的```public static void installApk(Context context, File apkFile)```方法。
 
-###### 其他
+#### 其他
 该项目中提供了两个工具类：UpdateHelper 和 NetWorkStateUtil。
 
 * * *
