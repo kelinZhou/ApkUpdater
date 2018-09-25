@@ -35,7 +35,10 @@ import java.util.Locale;
  */
 public final class ApkUpdater {
     private final Builder mBuilder;
-    private final IUpdateCallback mCallback;
+    /**
+     * 下载的监听回调对象。
+     */
+    private IUpdateCallback mCallback;
     private boolean isBindService;
     private ServiceConnection conn;
     private Intent mServiceIntent;
@@ -66,8 +69,23 @@ public final class ApkUpdater {
             throw new IllegalStateException("your must call ApkUpdater.init(context) method!");
         }
         mBuilder = builder;
-        mCallback = mBuilder.callback;
         mDefaultDialog = new DefaultDialog();
+    }
+
+    /**
+     * 设置监听对象。
+     *
+     * @param callback 监听回调对象。
+     */
+    public void setCallback(IUpdateCallback callback) {
+        mCallback = callback;
+    }
+
+    /**
+     * 移除监听。如果不希望再监听后续的回调，则可以调用该方法。
+     */
+    public void removeCallback() {
+        mCallback = null;
     }
 
     @NonNull
@@ -180,7 +198,7 @@ public final class ApkUpdater {
     /**
      * 检查更新并自动安装。
      *
-     * @param updateInfo  更新信息对象。
+     * @param updateInfo 更新信息对象。
      */
     public void check(@NonNull UpdateInfo updateInfo) {
         check(updateInfo, true, true);
@@ -461,10 +479,6 @@ public final class ApkUpdater {
         private final InformDialogParams informDialogConfig = new InformDialogParams();
         private final DownloadDialogParams loadDialogConfig = new DownloadDialogParams();
         /**
-         * 用来配置下载的监听回调对象。
-         */
-        IUpdateCallback callback;
-        /**
          * 通知栏的标题。
          */
         CharSequence mTitle;
@@ -483,16 +497,6 @@ public final class ApkUpdater {
         private DialogEventCallback dialogCallback;
 
         public Builder() {
-        }
-
-        /**
-         * 设置监听对象。
-         *
-         * @param callback 监听回调对象。
-         */
-        public Builder setCallback(IUpdateCallback callback) {
-            this.callback = callback;
-            return this;
         }
 
         /**
@@ -699,7 +703,7 @@ public final class ApkUpdater {
                 mCallback.onFiled(mIsAutoCheck, false, mHaveNewVersion, getCurrentVersionName(), UpdateHelper.getDownloadFailedCount(mApplicationContext), isForceUpdate(mUpdateInfo));
                 mCallback.onCompleted();
             } else {
-                Toast.makeText(mApplicationContext, "sorry, 跟新失败了~", Toast.LENGTH_SHORT).show();
+                Toast.makeText(mApplicationContext, "sorry, 下载失败了~", Toast.LENGTH_SHORT).show();
             }
         }
 

@@ -22,9 +22,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_check_update).setOnClickListener(this);
 
         mUpdater = new ApkUpdater.Builder()
-                .setCallback(new ApkCompleteUpdateCallback())
                 .setCheckWiFiState(true)
                 .builder();
+        mUpdater.setCallback(new ApkCompleteUpdateCallback());
     }
 
     @Override
@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         public void onSilentDownload() {
             Toast.makeText(getApplicationContext(), "静默下载", Toast.LENGTH_SHORT).show();
+            //mUpdater.removeCallback();  如果在用户点击静默安装之后不希望在监听后续的回调，则可以调用该方法。
         }
 
         @Override

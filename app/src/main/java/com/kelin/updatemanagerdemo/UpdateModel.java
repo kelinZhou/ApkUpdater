@@ -59,6 +59,6 @@ public class UpdateModel implements UpdateInfo {
     @Nullable
     @Override
     public String getMd5() {
-        return "d27c75f1955bce7874f54adb5e2a4616";
+        return "d27c75f1955bce7874f54adb5e2a46161";
     }
 }
