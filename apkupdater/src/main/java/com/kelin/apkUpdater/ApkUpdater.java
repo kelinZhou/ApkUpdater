@@ -17,7 +17,6 @@ import com.kelin.apkUpdater.callback.DialogEventCallback;
 import com.kelin.apkUpdater.callback.DownloadProgressCallback;
 import com.kelin.apkUpdater.callback.IUpdateCallback;
 import com.kelin.apkUpdater.dialog.DefaultDialog;
-import com.kelin.apkUpdater.util.ActivityStackManager;
 import com.kelin.apkUpdater.dialog.DownloadDialogParams;
 import com.kelin.apkUpdater.dialog.InformDialogParams;
 import com.kelin.apkUpdater.util.NetWorkStateUtil;

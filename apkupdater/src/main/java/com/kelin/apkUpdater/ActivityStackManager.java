@@ -1,11 +1,15 @@
-package com.kelin.apkUpdater.util;
+package com.kelin.apkUpdater;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+
+import com.kelin.apkUpdater.exception.IllegalCallException;
+import com.kelin.apkUpdater.exception.UninitializedException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,9 +38,9 @@ public class ActivityStackManager {
     private ActivityStackManager() {
     }
 
-    public void initUpdater(Context context) {
+    void initUpdater(Context context) {
         applicationContext = context.getApplicationContext();
-        ((Application)applicationContext).registerActivityLifecycleCallbacks(new ApplicationActivityLifecycleCallbacks());
+        ((Application) applicationContext).registerActivityLifecycleCallbacks(new ApplicationActivityLifecycleCallbacks());
     }
 
     @Nullable
@@ -44,12 +48,36 @@ public class ActivityStackManager {
         return activityStack.isEmpty() ? null : activityStack.get(0);
     }
 
+    @NonNull
+    public Activity requireStackTopActivity() {
+        checkInit();
+        if (!activityStack.isEmpty()) {
+            return activityStack.get(0);
+        } else {
+            throw new IllegalCallException("No Activity is currently started！");
+        }
+    }
+
+    @NonNull
     public List<Activity> getAllActivity() {
         return new ArrayList<>(activityStack);
     }
 
+    @Nullable
     public Context getApplicationContext() {
         return applicationContext;
+    }
+
+    @NonNull
+    public Context requireApplicationContext() {
+        checkInit();
+        return applicationContext;
+    }
+
+    private void checkInit() {
+        if (applicationContext == null) {
+            throw new UninitializedException();
+        }
     }
 
     private class ApplicationActivityLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
