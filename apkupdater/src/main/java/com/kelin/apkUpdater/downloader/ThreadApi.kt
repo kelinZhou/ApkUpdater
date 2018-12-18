@@ -20,11 +20,9 @@ interface ThreadApi {
     fun insertThread(threadInfo: ThreadInfo)
 
     /**
-     * 删除线程信息。
-     * @param url 要删除的线程的URL。
-     * @param threadId 要删除的线程的ID。
+     * 删除指定URL的所有线程。
      */
-    fun deleteThread(url: String, threadId: Int)
+    fun deleteThread(url:String)
 
     /**
      * 更新线程信息。
@@ -38,7 +36,7 @@ interface ThreadApi {
      * 获取指定URL的所有线程信息。
      * @param url 要获取的URL。
      */
-    fun getThreads(url: String): List<ThreadInfo>
+    fun getThreads(url: String): MutableList<ThreadInfo>
 
     /**
      * 判断指定线程是否存在。

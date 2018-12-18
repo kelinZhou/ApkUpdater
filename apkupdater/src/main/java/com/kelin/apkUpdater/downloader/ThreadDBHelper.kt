@@ -14,9 +14,14 @@ import com.kelin.apkUpdater.downloader.thread.ThreadInfo
  *
  * **版本:** v 1.0.0
  */
-class ThreadDBHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, 1), ThreadApi {
-    companion object {
+internal class ThreadDBHelper private constructor(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, 1), ThreadApi {
 
+    private object Singleton {
+        var singleton: ThreadDBHelper? = null
+        fun getSingleton(context: Context) = singleton ?: ThreadDBHelper(context)
+    }
+
+    companion object {
         /**
          * 数据库名称。
          */
@@ -56,23 +61,28 @@ class ThreadDBHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         /**
          * 插入线程信息。
          */
-        private const val SQL_INSERT_THREAD = "INSERT INTO $DB_TABLE_NAME ($FIELD_THREAD_ID, $FIELD_URL, $FIELD_BEGIN, $FIELD_END, $FIELD_LOADED_LENGTH) values(?,?,?,?,?)";
+        private const val SQL_INSERT_THREAD = "INSERT INTO $DB_TABLE_NAME ($FIELD_THREAD_ID, $FIELD_URL, $FIELD_BEGIN, $FIELD_END, $FIELD_LOADED_LENGTH) values(?,?,?,?,?)"
         /**
-         * 删除线程信息。
+         * 删除指定URL的所有线程信息。
          */
-        private const val SQL_DELETE_THREAD = "DELETE FROM $DB_TABLE_NAME WHERE $FIELD_URL = ? AND $FIELD_THREAD_ID = ?";
+        private const val SQL_DELETE_ALL_THREAD = "DELETE FROM $DB_TABLE_NAME WHERE $FIELD_URL = ?"
         /**
          * 跟新线程信息。
          */
-        private const val SQL_UPDATE_THREAD = "UPDATE $DB_TABLE_NAME SET $FIELD_LOADED_LENGTH = ? WHERE $FIELD_URL = ? AND $FIELD_THREAD_ID = ?";
+        private const val SQL_UPDATE_THREAD = "UPDATE $DB_TABLE_NAME SET $FIELD_LOADED_LENGTH = ? WHERE $FIELD_URL = ? AND $FIELD_THREAD_ID = ?"
         /**
          * 查询指定$FIELD_URL的所有线程。
          */
-        private const val SQL_SELECT_ALL_THREAD = "SELECT * FROM $DB_TABLE_NAME WHERE $FIELD_URL = ?";
+        private const val SQL_SELECT_ALL_THREAD = "SELECT * FROM $DB_TABLE_NAME WHERE $FIELD_URL = ?"
         /**
          * 根据URL和线程ID查询指定线程。
          */
         private const val SQL_SELECT_THREAD_IS_EXISTS = "SELECT * FROM $DB_TABLE_NAME WHERE $FIELD_URL = ? AND $FIELD_THREAD_ID = ?"
+
+        /**
+         * 获取单例对象。
+         */
+        fun getInstance(context: Context) = Singleton.getSingleton(context)
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
@@ -84,22 +94,25 @@ class ThreadDBHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         db?.execSQL(SQL_CREATE_TABLE)
     }
 
+    @Synchronized
     override fun insertThread(threadInfo: ThreadInfo) {
         writableDatabase.execSQL(SQL_INSERT_THREAD, arrayOf(threadInfo.id, threadInfo.url, threadInfo.begin, threadInfo.end, threadInfo.loadedLength))
         writableDatabase.close()
     }
 
-    override fun deleteThread(url: String, threadId: Int) {
-        writableDatabase.execSQL(SQL_DELETE_THREAD, arrayOf(url, threadId))
+    @Synchronized
+    override fun deleteThread(url: String) {
+        writableDatabase.execSQL(SQL_DELETE_ALL_THREAD, arrayOf(url))
         writableDatabase.close()
     }
 
+    @Synchronized
     override fun updateThread(url: String, threadId: Int, loadedLength: Long) {
         writableDatabase.execSQL(SQL_UPDATE_THREAD, arrayOf(loadedLength, url, threadId))
         writableDatabase.close()
     }
 
-    override fun getThreads(url: String): List<ThreadInfo> {
+    override fun getThreads(url: String): MutableList<ThreadInfo> {
         val cursor = writableDatabase.rawQuery(SQL_SELECT_ALL_THREAD, arrayOf(url))
         val result = ArrayList<ThreadInfo>(cursor.count)
         while (cursor.moveToNext()) {

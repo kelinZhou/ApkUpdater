@@ -3,6 +3,7 @@ package com.kelin.updatemanagerdemo;
 import android.app.Application;
 
 import com.kelin.apkUpdater.ApkUpdater;
+import com.kelin.apkUpdater.downloader.DownLoadService;
 import com.squareup.leakcanary.LeakCanary;
 
 /**

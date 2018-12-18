@@ -20,6 +20,7 @@ import com.kelin.apkUpdater.dialog.DefaultDialog;
 import com.kelin.apkUpdater.dialog.DownloadDialogParams;
 import com.kelin.apkUpdater.dialog.InformDialogParams;
 import com.kelin.apkUpdater.downloader.DownLoadService;
+import com.kelin.apkUpdater.downloader.Downloader;
 import com.kelin.apkUpdater.util.NetWorkStateUtil;
 
 import java.io.File;
@@ -52,6 +53,7 @@ public final class ApkUpdater {
     private DefaultDialogListener mDialogListener = new DefaultDialogListener();
     private final Context mApplicationContext;
     private boolean mIsAutoCheck;
+    private Downloader downloader;
 
     public static void init(Context context) {
         ActivityStackManager.getInstance().initUpdater(context);
@@ -68,6 +70,7 @@ public final class ApkUpdater {
         mBuilder = builder;
         mCallback = mBuilder.callback;
         mDefaultDialog = new DefaultDialog();
+        downloader = Downloader.Companion.createDownloader(mApplicationContext);
     }
 
     /**
@@ -451,7 +454,7 @@ public final class ApkUpdater {
 //        mApplicationContext.startService(mServiceIntent);
 //        isDownloading = mApplicationContext.bindService(mServiceIntent, getServiceConnection(), Context.BIND_AUTO_CREATE);
         isDownloading = true;
-        DownLoadService.Companion.startDownload(mApplicationContext, 0, mUpdateInfo.getDownLoadsUrl(), getApkName(mUpdateInfo));
+        downloader.startDownload(mUpdateInfo.getDownLoadsUrl(), getApkName(mUpdateInfo));
     }
 
     /**
