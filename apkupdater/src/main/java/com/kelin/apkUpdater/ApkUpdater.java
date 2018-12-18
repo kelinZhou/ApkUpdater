@@ -19,6 +19,7 @@ import com.kelin.apkUpdater.callback.IUpdateCallback;
 import com.kelin.apkUpdater.dialog.DefaultDialog;
 import com.kelin.apkUpdater.dialog.DownloadDialogParams;
 import com.kelin.apkUpdater.dialog.InformDialogParams;
+import com.kelin.apkUpdater.downloader.DownLoadService;
 import com.kelin.apkUpdater.util.NetWorkStateUtil;
 
 import java.io.File;
@@ -35,7 +36,7 @@ import java.util.Locale;
 public final class ApkUpdater {
     private final Builder mBuilder;
     private IUpdateCallback mCallback;
-    private boolean isBindService;
+    private boolean isDownloading;
     private ServiceConnection conn;
     private Intent mServiceIntent;
     private DefaultDialog mDefaultDialog;
@@ -94,7 +95,7 @@ public final class ApkUpdater {
                     downloadService.setServiceUnBindListener(new DownloadService.ServiceUnBindListener() {
                         @Override
                         public void onUnBind() {
-                            isBindService = false;
+                            isDownloading = false;
                         }
                     });
                 }
@@ -176,9 +177,9 @@ public final class ApkUpdater {
 
     private void stopService() {
         //判断是否真的下载完成进行安装了，以及是否注册绑定过服务
-        if (isBindService) {
+        if (isDownloading) {
             mApplicationContext.unbindService(conn);
-            isBindService = false;
+            isDownloading = false;
         }
         mApplicationContext.stopService(mServiceIntent);
     }
@@ -440,15 +441,17 @@ public final class ApkUpdater {
      * 开始下载。
      */
     private void startDownload() {
-        mServiceIntent = new Intent(mApplicationContext, DownloadService.class);
-        mServiceIntent.putExtra(DownloadService.KEY_APK_NAME, getApkName(mUpdateInfo));
-        mServiceIntent.putExtra(DownloadService.KEY_DOWNLOAD_URL, mUpdateInfo.getDownLoadsUrl());
-        mServiceIntent.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate(mUpdateInfo));
-        mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_TITLE, mBuilder.mTitle);
-        mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_DESCRIPTION, mBuilder.mDescription);
-
-        mApplicationContext.startService(mServiceIntent);
-        isBindService = mApplicationContext.bindService(mServiceIntent, getServiceConnection(), Context.BIND_AUTO_CREATE);
+//        mServiceIntent = new Intent(mApplicationContext, DownloadService.class);
+//        mServiceIntent.putExtra(DownloadService.KEY_APK_NAME, getApkName(mUpdateInfo));
+//        mServiceIntent.putExtra(DownloadService.KEY_DOWNLOAD_URL, mUpdateInfo.getDownLoadsUrl());
+//        mServiceIntent.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate(mUpdateInfo));
+//        mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_TITLE, mBuilder.mTitle);
+//        mServiceIntent.putExtra(DownloadService.KEY_NOTIFY_DESCRIPTION, mBuilder.mDescription);
+//
+//        mApplicationContext.startService(mServiceIntent);
+//        isDownloading = mApplicationContext.bindService(mServiceIntent, getServiceConnection(), Context.BIND_AUTO_CREATE);
+        isDownloading = true;
+        DownLoadService.Companion.startDownload(mApplicationContext, 0, mUpdateInfo.getDownLoadsUrl(), getApkName(mUpdateInfo));
     }
 
     /**
@@ -614,7 +617,7 @@ public final class ApkUpdater {
         protected void onConnected(int type) {
             switch (type) {
                 case ConnectivityManager.TYPE_MOBILE:
-                    if (isBindService) {
+                    if (isDownloading) {
                         if (!mIsProgressDialogHidden) {
                             showProgressDialog();
                         }
@@ -627,7 +630,7 @@ public final class ApkUpdater {
                     }
                     break;
                 case ConnectivityManager.TYPE_WIFI:
-                    if (isBindService) {
+                    if (isDownloading) {
                         showProgressDialog();
                     } else {
                         startDownload();
@@ -767,7 +770,7 @@ public final class ApkUpdater {
                     break;
                 case STATE_NETWORK_UNUSABLE:
                     if (mCallback != null) {
-                        if (isBindService) {
+                        if (isDownloading) {
                             if (callback != null) {
                                 callback.onDownloadPending();
                             }

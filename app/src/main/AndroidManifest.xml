@@ -38,6 +38,7 @@
 
         <!--版本更新服务-->
         <service android:name="com.kelin.apkUpdater.DownloadService" />
+        <service android:name="com.kelin.apkUpdater.downloader.DownLoadService" />
 
         <activity android:name="com.kelin.updatemanagerdemo.MainActivity">
             <intent-filter>
