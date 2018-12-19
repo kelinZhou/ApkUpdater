@@ -1,9 +1,5 @@
 apply plugin: 'com.android.application'
 
-apply plugin: 'kotlin-android'
-
-apply plugin: 'kotlin-android-extensions'
-
 android {
     compileSdkVersion Integer.parseInt(ANDROID_COMPILE_SDK_VERSION)
     defaultConfig {
@@ -28,7 +24,6 @@ dependencies {
     androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.android.support:appcompat-v7:${ANDROID_SUPPORT_LIB_VERSION}"
     testImplementation 'junit:junit:4.12'
     implementation project(':apkupdater')

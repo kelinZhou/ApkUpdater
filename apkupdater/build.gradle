@@ -1,7 +1,5 @@
 apply plugin: 'com.android.library'
 
-apply plugin: 'kotlin-android'
-
 apply plugin: 'com.github.dcendents.android-maven'
 
 group = 'com.github.kelinZhou'
@@ -34,7 +32,6 @@ dependencies {
     })
     implementation "com.android.support:appcompat-v7:${ANDROID_SUPPORT_LIB_VERSION}"
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     testImplementation 'junit:junit:4.12'
 }
 
