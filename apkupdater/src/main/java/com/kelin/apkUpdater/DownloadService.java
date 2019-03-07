@@ -8,6 +8,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageInstaller;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
@@ -17,6 +18,8 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
 
 import com.kelin.apkUpdater.callback.DownloadProgressCallback;
 
@@ -196,8 +199,12 @@ public class DownloadService extends Service {
      * 发送Handler消息更新进度和状态
      */
     private void updateProgress() {
-        int[] bytesAndStatus = getBytesAndStatus();
-        downLoadHandler.sendMessage(downLoadHandler.obtainMessage(WHAT_PROGRESS, bytesAndStatus[0], bytesAndStatus[1], bytesAndStatus[2]));
+        try {
+            int[] bytesAndStatus = getBytesAndStatus(); // getBytesAndStatus 方法是查询数据库，在查询的时候有些手机会崩溃，无奈。先这么处理一下。后续换其他的实现方式。
+            downLoadHandler.sendMessage(downLoadHandler.obtainMessage(WHAT_PROGRESS, bytesAndStatus[0], bytesAndStatus[1], bytesAndStatus[2]));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -264,11 +271,14 @@ public class DownloadService extends Service {
                                 }
                             }
                             break;
-
                         case WHAT_COMPLETED:
                             if (!mIsLoadFailed) {
                                 File apkFile = (File) msg.obj;
-                                onProgressListener.onLoadSuccess(apkFile, false);
+                                if (apkFile != null && apkFile.exists()) {
+                                    onProgressListener.onLoadSuccess(apkFile, false);
+                                } else {
+                                    onProgressListener.onLoadFailed();
+                                }
                             }
                             break;
                     }
@@ -285,23 +295,26 @@ public class DownloadService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             long downId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
-            switch (intent.getAction()) {
-                case DownloadManager.ACTION_DOWNLOAD_COMPLETE:
-                    if (downloadId == downId && downId != -1 && downloadManager != null) {
-                        File apkFile = getRealFile(downloadManager.getUriForDownloadedFile(downloadId));
-
-                        if (apkFile != null && apkFile.exists()) {
-                            String realPath = apkFile.getAbsolutePath();
-                            UpdateHelper.putApkPath2Sp(getApplicationContext(), realPath);
+            String action = intent.getAction();
+            if (!TextUtils.isEmpty(action)) {
+                switch (action) {
+                    case DownloadManager.ACTION_DOWNLOAD_COMPLETE:
+                        if (downloadId == downId && downId != -1 && downloadManager != null) {
+                            File apkFile = getRealFile(downloadManager.getUriForDownloadedFile(downloadId));
+                            if (apkFile != null && apkFile.exists()) {
+                                String realPath = apkFile.getAbsolutePath();
+                                UpdateHelper.putApkPath2Sp(getApplicationContext(), realPath);
+                            }
+                            updateProgress();
+                            downLoadHandler.sendMessage(downLoadHandler.obtainMessage(WHAT_COMPLETED, apkFile));
                         }
-                        updateProgress();
-                        downLoadHandler.sendMessage(downLoadHandler.obtainMessage(WHAT_COMPLETED, apkFile));
-                    }
-                    break;
+                        break;
+                }
             }
         }
     }
 
+    @Nullable
     public File getRealFile(Uri uri) {
         if (null == uri) return null;
         final String scheme = uri.getScheme();
