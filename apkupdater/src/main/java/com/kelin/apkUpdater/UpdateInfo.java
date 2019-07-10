@@ -1,5 +1,6 @@
 package com.kelin.apkUpdater;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 /**
@@ -55,8 +56,14 @@ public interface UpdateInfo {
     CharSequence getUpdateMessage();
 
     /**
-     * 获取网络上最新安装包的MD5值，用户校验下载后的安装包是否完整以及是否修改等。
-     * @return 如果你希望使用MD5校验则返回网络上最近安装包的MD5值，如果返回null这表示不进行MD5校验。
+     * 文件签名类型。
+     * @return 返回你能够提供的文件签名类型，例如MD5或者SHA1.
      */
-    @Nullable String getMd5();
+    @Nullable SignatureType getSignatureType();
+
+    /**
+     * 获取网络上最新安装包的签名，用户校验下载后的安装包是否完整以及是否修改等。
+     * @return 如果你希望使用签名校验则返回网络上最近安装包的签名，如果返回null这表示不进行签名校验，签名可以是MD5或者SHA1。
+     */
+    @Nullable String getSignature();
 }

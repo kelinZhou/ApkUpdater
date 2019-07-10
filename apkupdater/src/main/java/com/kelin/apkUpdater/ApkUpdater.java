@@ -304,7 +304,7 @@ public final class ApkUpdater {
     private void respondCheckHandlerResult(boolean isContinue) {
         if (isContinue) {
             File apkFile = null;
-            if (mIsLoaded && checkFileMD5(apkFile = new File(UpdateHelper.getApkPathFromSp(mApplicationContext)))) {
+            if (mIsLoaded && checkFileSignature(apkFile = new File(UpdateHelper.getApkPathFromSp(mApplicationContext)))) {
                 handlerDownloadSuccess(apkFile);
             } else {
                 if (apkFile != null && apkFile.exists()) {
@@ -638,18 +638,23 @@ public final class ApkUpdater {
     }
 
     /**
-     * 校验MD5值，如果调用者的{@link UpdateInfo#getMd5()}方法返回了不为空的字符，均认为调用者提供了正确的MD5，那么
-     * 将会对这个MD5值与当前apk文件的MD5进行校验。
+     * 校验文件签名，如果调用者的{@link UpdateInfo#getSignature()}方法返回了不为空的字符，均认为调用者提供了正确的文件签名，那么
+     * 将会对这个签名与当前apk文件的签名进行校验。
      *
      * @param apkFile 当前的apk文件。
-     * @return 如果当前文件存在且正确的MD5值与当前文件的MD5值匹配或则用户没有提供MD5(不需要MD5校验)则返回true， 否则返回false。
+     * @return 如果当前文件存在且正确的签名与当前文件的签名匹配或则调用者没有提供签名(不需要签名校验)则返回true， 否则返回false。
      */
-    private boolean checkFileMD5(File apkFile) {
+    private boolean checkFileSignature(File apkFile) {
         if (!apkFile.exists()) {
             return false;
         } else {
-            String availableMd5 = mUpdateInfo.getMd5();
-            return TextUtils.isEmpty(availableMd5) || TextUtils.equals(availableMd5, UpdateHelper.getFileMD5(apkFile));
+            SignatureType signatureType = mUpdateInfo.getSignatureType();
+            String availableSignature = mUpdateInfo.getSignature();
+            if (signatureType != null && !TextUtils.isEmpty(availableSignature)) {
+                return TextUtils.equals(availableSignature, UpdateHelper.getFileSignature(apkFile, signatureType));
+            } else {
+                return true;
+            }
         }
     }
 
@@ -681,7 +686,7 @@ public final class ApkUpdater {
 
         @Override
         public void onLoadSuccess(File apkFile, boolean isCache) {
-            if (!checkFileMD5(apkFile)) {
+            if (!checkFileSignature(apkFile)) {
                 UpdateHelper.removeOldApk(mApplicationContext);
                 UpdateHelper.downloadFailedCountPlus(mApplicationContext);
                 mDefaultDialog.showCheckMD5FailedDialog(mDialogListener.changeState(DefaultDialogListener.STATE_CHECK_MD5_FAILED));

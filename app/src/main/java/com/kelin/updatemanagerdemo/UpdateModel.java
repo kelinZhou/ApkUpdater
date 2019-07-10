@@ -2,6 +2,7 @@ package com.kelin.updatemanagerdemo;
 
 import android.support.annotation.Nullable;
 
+import com.kelin.apkUpdater.SignatureType;
 import com.kelin.apkUpdater.UpdateInfo;
 
 /**
@@ -24,7 +25,7 @@ public class UpdateModel implements UpdateInfo {
 
     @Override
     public String getDownLoadsUrl() {
-        return "http://file.testing.lieluobo.net/o_1cntnsvto19mn11p1qgtfvvdd77.apk";
+        return "http://file.dev.lieluobo.net/o_1dfdfjisf5p21k58ag5tmita9c.apk";
     }
 
     @Override
@@ -58,7 +59,13 @@ public class UpdateModel implements UpdateInfo {
 
     @Nullable
     @Override
-    public String getMd5() {
-        return null;
+    public SignatureType getSignatureType() {
+        return SignatureType.MD5;
+    }
+
+    @Nullable
+    @Override
+    public String getSignature() {
+        return "f607609960db3ba54ce9648fde3d0cb7";
     }
 }

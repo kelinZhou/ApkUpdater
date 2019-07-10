@@ -15,7 +15,10 @@ import android.webkit.MimeTypeMap;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 
 /**
@@ -196,27 +199,17 @@ public class UpdateHelper {
         return sp.edit();
     }
 
-
-    public static String getFileMD5(File file) {
-        if (!file.isFile()) {
-            return null;
-        }
-        MessageDigest digest;
-        FileInputStream in;
-        byte buffer[] = new byte[1024];
-        int len;
+    public static String getFileSignature(File file, SignatureType type) {
         try {
-            digest = MessageDigest.getInstance("MD5");
-            in = new FileInputStream(file);
-            while ((len = in.read(buffer, 0, 1024)) != -1) {
-                digest.update(buffer, 0, len);
-            }
-            in.close();
+            MessageDigest digest = MessageDigest.getInstance(type.getTypeName());
+            FileInputStream in = new FileInputStream(file);
+            FileChannel ch = in.getChannel();
+            MappedByteBuffer byteBuffer = ch.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+            digest.update(byteBuffer);
+            return bytesToHexString(digest.digest());
         } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
-        return bytesToHexString(digest.digest());
     }
 
     public static String bytesToHexString(byte[] src) {
