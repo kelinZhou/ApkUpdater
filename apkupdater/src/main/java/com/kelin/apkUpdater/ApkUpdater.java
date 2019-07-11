@@ -1,14 +1,18 @@
 package com.kelin.apkUpdater;
 
+import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
+import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StyleRes;
+import android.support.v4.app.ActivityCompat;
 import android.text.TextUtils;
 import android.widget.Toast;
 
@@ -51,6 +55,7 @@ public final class ApkUpdater {
     private DefaultDialogListener mDialogListener = new DefaultDialogListener();
     private final Context mApplicationContext;
     private boolean mIsAutoCheck;
+    private PermissionChecker permissionChecker;
 
     public static void init(Context context) {
         ActivityStackManager.getInstance().initUpdater(context);
@@ -67,6 +72,7 @@ public final class ApkUpdater {
         mBuilder = builder;
         mCallback = mBuilder.callback;
         mDefaultDialog = new DefaultDialog();
+        permissionChecker = builder.permissionChecker;
     }
 
     /**
@@ -325,22 +331,33 @@ public final class ApkUpdater {
         }
     }
 
-    private void handlerDownloadSuccess(File apkFile) {
-        CompleteUpdateCallback completeUpdateCallback = getCompleteUpdateCallback();
+    private void handlerDownloadSuccess(final File apkFile) {
         if (mAutoInstall) {
-            boolean installApk = UpdateHelper.installApk(mApplicationContext, apkFile);
-            if (!installApk) {
-                if (completeUpdateCallback != null) {
-                    completeUpdateCallback.onInstallFailed();
-                }
-                if (mCallback != null) {
-                    mCallback.onFiled(mIsAutoCheck, false, true, getCurrentVersionName(), 0, isForceUpdate(mUpdateInfo));
-                    mCallback.onCompleted();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && mApplicationContext.getPackageManager().canRequestPackageInstalls()) {
+                if (permissionChecker != null) {
+                    permissionChecker.checkPermission(Manifest.permission.REQUEST_INSTALL_PACKAGES, new PermissionResult() {
+                        @Override
+                        public void permissionResult(boolean isGranted) {
+                            if (isGranted) {
+                                onInstallApk(apkFile);
+                            } else {
+                                CompleteUpdateCallback completeUpdateCallback = getCompleteUpdateCallback();
+                                if (completeUpdateCallback != null) {
+                                    completeUpdateCallback.onDownloadSuccess(apkFile, true);
+                                }
+                                if (mCallback != null) {
+                                    mCallback.onFiled(mIsAutoCheck, true, true, getCurrentVersionName(), 0, isForceUpdate(mUpdateInfo));
+                                    mCallback.onCompleted();
+                                }
+                            }
+                        }
+                    });
                 }
             } else {
-                //如果installApk为true则不需要回调了，因为安装成功必定会杀死进程。杀掉进程后回调已经没有意义了。
+                onInstallApk(apkFile);
             }
         } else {
+            CompleteUpdateCallback completeUpdateCallback = getCompleteUpdateCallback();
             if (completeUpdateCallback != null) {
                 completeUpdateCallback.onDownloadSuccess(apkFile, true);
             }
@@ -348,6 +365,22 @@ public final class ApkUpdater {
                 mCallback.onSuccess(mIsAutoCheck, true, getCurrentVersionName(), isForceUpdate(mUpdateInfo));
                 mCallback.onCompleted();
             }
+        }
+    }
+
+    private void onInstallApk(File apkFile) {
+        CompleteUpdateCallback completeUpdateCallback = getCompleteUpdateCallback();
+        boolean installApk = UpdateHelper.installApk(mApplicationContext, apkFile);
+        if (!installApk) {
+            if (completeUpdateCallback != null) {
+                completeUpdateCallback.onInstallFailed();
+            }
+            if (mCallback != null) {
+                mCallback.onFiled(mIsAutoCheck, false, true, getCurrentVersionName(), 0, isForceUpdate(mUpdateInfo));
+                mCallback.onCompleted();
+            }
+        } else {
+            //如果installApk为true则不需要回调了，因为安装成功必定会杀死进程。杀掉进程后回调已经没有意义了。
         }
     }
 
@@ -487,8 +520,10 @@ public final class ApkUpdater {
          */
         private boolean checkWiFiState = true;
         private DialogEventCallback dialogCallback;
+        private PermissionChecker permissionChecker;
 
-        public Builder() {
+        public Builder(PermissionChecker checker) {
+            permissionChecker = checker;
         }
 
         /**
@@ -811,5 +846,13 @@ public final class ApkUpdater {
                     break;
             }
         }
+    }
+
+    public interface PermissionChecker {
+        void checkPermission(String permission, PermissionResult permissionResult);
+    }
+
+    public interface PermissionResult {
+        void permissionResult(boolean isGranted);
     }
 }

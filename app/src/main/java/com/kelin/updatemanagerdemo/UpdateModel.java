@@ -25,7 +25,7 @@ public class UpdateModel implements UpdateInfo {
 
     @Override
     public String getDownLoadsUrl() {
-        return "http://file.dev.lieluobo.net/o_1dfdfjisf5p21k58ag5tmita9c.apk";
+        return "http://file.dev.lieluobo.net/o_1dfdmjdf61h9resj1k1ncdlc37.apk";
     }
 
     @Override
@@ -66,6 +66,6 @@ public class UpdateModel implements UpdateInfo {
     @Nullable
     @Override
     public String getSignature() {
-        return "f607609960db3ba54ce9648fde3d0cb7";
+        return "";
     }
 }

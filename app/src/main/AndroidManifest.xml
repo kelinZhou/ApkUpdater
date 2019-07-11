@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.kelin.updatemanagerdemo">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.kelin.updatemanagerdemo">
 
 
 
     <!--网络访问权限-->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!--SD卡读权限-->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <!--SD卡写权限-->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <!--不弹出通知栏权限-->
     <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"/>
     <!--DownloadManager-->
     <uses-permission android:name="android.permission.ACCESS_DOWNLOAD_MANAGER"/>
     <!--获取网络状态权限-->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!--APK安装权限-->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
     <application
         android:name=".App"

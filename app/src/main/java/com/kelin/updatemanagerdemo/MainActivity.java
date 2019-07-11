@@ -1,8 +1,11 @@
 package com.kelin.updatemanagerdemo;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Toast;
@@ -15,6 +18,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
     private ApkUpdater mUpdater;
+    private ApkUpdater.PermissionResult permissionResult;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,10 +27,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.tv_content).setOnClickListener(this);
         findViewById(R.id.btn_check_update).setOnClickListener(this);
 
-        mUpdater = new ApkUpdater.Builder()
-                .setCallback(new ApkCompleteUpdateCallback())
+        mUpdater = new ApkUpdater.Builder(new ApkUpdater.PermissionChecker() {
+            @RequiresApi(api = Build.VERSION_CODES.M)
+            @Override
+            public void checkPermission(String permission, ApkUpdater.PermissionResult permissionResult) {
+                MainActivity.this.permissionResult = permissionResult;
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{permission}, 123);
+            }
+        }).setCallback(new ApkCompleteUpdateCallback())
                 .setCheckWiFiState(true)
                 .builder();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        permissionResult.permissionResult(permissions.length == 0);
     }
 
     @Override
