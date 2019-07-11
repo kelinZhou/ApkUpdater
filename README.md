@@ -20,7 +20,7 @@ allprojects {
 #### 第二步：添加这个依赖。
 ```
 dependencies {
-    implementation 'com.github.kelinZhou:ApkUpdater:2.1.1'
+    implementation 'com.github.kelinZhou:ApkUpdater:2.2.1'
 }
 ```
 
@@ -30,16 +30,14 @@ dependencies {
 ```
     <!--网络访问权限-->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!--SD卡读权限-->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <!--SD卡写权限-->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <!--不弹出通知栏权限-->
     <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"/>
     <!--DownloadManager-->
     <uses-permission android:name="android.permission.ACCESS_DOWNLOAD_MANAGER"/>
     <!--获取网络状态权限-->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!--APK安装权限-->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 ```
 
 #### 清单文件配置
