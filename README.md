@@ -9,25 +9,25 @@
 
 ## 下载
 #### 第一步：添加 JitPack 仓库到你项目根目录的 gradle 文件中。
-```
+```groovy
 allprojects {
     repositories {
-        ...
+        //省略部分代码...
         maven { url 'https://jitpack.io' }
     }
 }
 ```
 #### 第二步：添加这个依赖。
-```
+```groovy
 dependencies {
-    implementation 'com.github.kelinZhou:ApkUpdater:2.2.1'
+    implementation 'com.github.kelinZhou:ApkUpdater:2.2.2'
 }
 ```
 
 ## 使用
 #### 添加权限
 你需要在你的清单文件中添加以下权限：
-```
+```html
     <!--网络访问权限-->
     <uses-permission android:name="android.permission.INTERNET"/>
     <!--不弹出通知栏权限-->
@@ -42,7 +42,7 @@ dependencies {
 
 #### 清单文件配置
 你需要在你清单文件中的**Application**节点下添加如下配置：
-```
+```html
 <!--Android7.0一上安装Apk所需要的文件提供者-->
 <provider
     android:name="android.support.v4.content.FileProvider"
@@ -57,9 +57,31 @@ dependencies {
 <!--版本更新服务-->
 <service android:name="com.kelin.apkUpdater.DownloadService" />
 ```
+
+在Android7.0以上的设备如果不能正常下载你可能还需要在清单文件的Application节点下增加networkSecurityConfig配置。例如：
+```html
+<application
+        android:name=".App"
+        android:networkSecurityConfig="@xml/network_security_config">
+
+        <!--此处省略了你的Activity、Service等四大组件-->
+        
+</application>
+```
+其中 network_security_config 文件需要定义在res的xml文件夹下，它的代码如下:
+```html
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
+```
 #### 初始化
 你需要在你的Application的onCreate生命周期方法中调用``` ApkUpdater.init(this) ```，如下:
-```
+```java
 public class MyApplication extends Application {
     @Override
     public void onCreate() {
@@ -70,7 +92,7 @@ public class MyApplication extends Application {
 }
 ```
 **注意:** 别忘记在清单文件中使用你的Application:
-```
+```html
 <application
         android:name=".MyApplication"  //这里是你自定义的Application。
         android:allowBackup="true"
@@ -195,7 +217,7 @@ public interface DialogEventCallback {
 ```
 #### 检查更新
 检查更新的代码如下：
-```
+```java
 private void checkUpdate(UpdateModel updateModel) {
     new Updater.Builder(MainActivity.this).builder().check(updateModel);
 }
@@ -203,20 +225,20 @@ private void checkUpdate(UpdateModel updateModel) {
 Updater的check方法除了```public void check(UpdateInfo updateInfo)```还有以下两个重载:
 
 1、 
-```
+```java
 public void check(@NonNull UpdateInfo updateInfo, boolean isAutoCheck)
 ```
 isAutoCheck参数是指是不是自动更新，因为手动更新时如果没有新的版本你总要告诉一下用户，而这个参数将会在回调方法中传递给你。
 
 2、
-```
+```java
 public void check(@NonNull UpdateInfo updateInfo, boolean isAutoCheck)
 ```
 autoInstall参数是指要不要自动安装，如果你只是想下载一个apk文件而不希望立即安装的话则可以将该参数置为false。
 
 #### 开始下载
 如果你调用了检查更新的方法这一步是**不需要你手动调用的**，但是如果你只是单纯的想利用API做下载Apk的动作就可以通过此方法执行，代码如下：
-```
+```java
 new Updater.Builder(MainActivity.this).builder().download(updateModel);
 ```
 与检查更新**check()**方法一样，download方法也提供了重载，所有方法如下：
