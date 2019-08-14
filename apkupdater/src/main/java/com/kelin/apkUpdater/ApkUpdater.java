@@ -5,14 +5,12 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StyleRes;
-import android.support.v4.app.ActivityCompat;
 import android.text.TextUtils;
 import android.widget.Toast;
 
@@ -333,9 +331,9 @@ public final class ApkUpdater {
 
     private void handlerDownloadSuccess(final File apkFile) {
         if (mAutoInstall) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && mApplicationContext.getPackageManager().canRequestPackageInstalls()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !mApplicationContext.getPackageManager().canRequestPackageInstalls()) {
                 if (permissionChecker != null) {
-                    permissionChecker.checkPermission(Manifest.permission.REQUEST_INSTALL_PACKAGES, new PermissionResult() {
+                    permissionChecker.checkInstallPermission(Manifest.permission.REQUEST_INSTALL_PACKAGES, new PermissionResult() {
                         @Override
                         public void permissionResult(boolean isGranted) {
                             if (isGranted) {
@@ -849,7 +847,7 @@ public final class ApkUpdater {
     }
 
     public interface PermissionChecker {
-        void checkPermission(String permission, PermissionResult permissionResult);
+        void checkInstallPermission(String permission, PermissionResult permissionResult);
     }
 
     public interface PermissionResult {

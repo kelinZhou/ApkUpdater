@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mUpdater = new ApkUpdater.Builder(new ApkUpdater.PermissionChecker() {
             @RequiresApi(api = Build.VERSION_CODES.M)
             @Override
-            public void checkPermission(String permission, ApkUpdater.PermissionResult permissionResult) {
+            public void checkInstallPermission(String permission, ApkUpdater.PermissionResult permissionResult) {
                 MainActivity.this.permissionResult = permissionResult;
                 ActivityCompat.requestPermissions(MainActivity.this, new String[]{permission}, 123);
             }

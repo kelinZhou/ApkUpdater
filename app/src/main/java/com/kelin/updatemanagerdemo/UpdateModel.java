@@ -25,7 +25,7 @@ public class UpdateModel implements UpdateInfo {
 
     @Override
     public String getDownLoadsUrl() {
-        return "http://file.dev.lieluobo.net/o_1dfdmjdf61h9resj1k1ncdlc37.apk";
+        return "http://file.testing.lieluobo.net/o_1di4u907j7go1pn4f8e4s41h317.apk";
     }
 
     @Override
