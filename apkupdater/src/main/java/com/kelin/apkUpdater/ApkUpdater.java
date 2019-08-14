@@ -330,6 +330,10 @@ public final class ApkUpdater {
     }
 
     private void handlerDownloadSuccess(final File apkFile) {
+        if (mBuilder.dialogCallback != null) {
+            long length = apkFile.length();
+            mBuilder.dialogCallback.onProgress(ApkUpdater.this, length, length, 100);
+        }
         if (mAutoInstall) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !mApplicationContext.getPackageManager().canRequestPackageInstalls()) {
                 if (permissionChecker != null) {
