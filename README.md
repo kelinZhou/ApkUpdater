@@ -20,7 +20,7 @@ allprojects {
 #### 第二步：添加这个依赖。
 ```groovy
 dependencies {
-    implementation 'com.github.kelinZhou:ApkUpdater:2.2.2'
+    implementation 'com.github.kelinZhou:ApkUpdater:2.2.3'
 }
 ```
 
