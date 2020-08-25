@@ -39,45 +39,48 @@ class DownLoadService : Service() {
 
         internal fun getStartIntent(context: Context, url: String, name: String): Intent {
             val intent = Intent(context, DownLoadService::class.java)
-            intent.action = DownLoadService.ACTION_DOWNLOAD_START
+            intent.action = ACTION_DOWNLOAD_START
             intent.putExtra(KEY_DOWNLOAD_FILE_INFO, FileInfo(0, url, name, 0, 0))
             return intent
         }
 
         internal fun getPauseIntent(context: Context, url: String): Intent {
-            val intent = Intent(context, DownLoadService::class.java)
-            intent.action = ACTION_DOWNLOAD_PAUSE
-            return intent
+            return Intent(context, DownLoadService::class.java).apply {
+                action = ACTION_DOWNLOAD_PAUSE
+            }
         }
     }
 
-    private val myHandler = @SuppressLint("HandlerLeak")
-    object : Handler() {
-        override fun handleMessage(msg: Message?) {
-            if (msg != null) {
-                when (msg.what) {
-                    MSG_LOAD_FILE_INFO_OK -> {
-                        if (msg.obj is FileInfo) {
-                            val fileInfo = msg.obj as FileInfo
-                            downloader = DownloadTask(fileInfo, (Runtime.getRuntime().availableProcessors() + 1).ushr(1), cacheDir, getThreadDBHelper(), this)
-                            downloader!!.download()
+    private val myHandler by lazy {
+        @SuppressLint("HandlerLeak")
+        object : Handler() {
+            override fun handleMessage(msg: Message?) {
+                if (msg != null) {
+                    when (msg.what) {
+                        MSG_LOAD_FILE_INFO_OK -> {
+                            if (msg.obj is FileInfo) {
+                                val fileInfo = msg.obj as FileInfo
+                                downloader = DownloadTask(fileInfo, (Runtime.getRuntime().availableProcessors() + 1).ushr(1), cacheDir, getThreadDBHelper(), this)
+                                downloader!!.download()
+                            }
                         }
-                    }
-                    MSG_LOAD_PROGRESS -> {
-                        val percent = msg.arg1
-                        Log.i("---------------", percent.toString())
-                        if (percent == 100) {
-                            val apkFile = msg.obj as File
-                            sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(apkFile)))
-                            Log.i("---------------", "下载完成")
-                            UpdateHelper.installApk(ActivityStackManager.getInstance().applicationContext, apkFile)
+                        MSG_LOAD_PROGRESS -> {
+                            val percent = msg.arg1
+                            Log.i("---------------", percent.toString())
+                            if (percent == 100) {
+                                val apkFile = msg.obj as File
+                                sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(apkFile)))
+                                Log.i("---------------", "下载完成")
+                                UpdateHelper.installApk(ActivityStackManager.getInstance().applicationContext, apkFile)
 //                            Log.i("================", if (installApk) "安装成功" else "安装失败")
+                            }
                         }
                     }
                 }
             }
         }
     }
+
 
     private lateinit var cacheDir: String
     private var downloader: DownloadTask? = null

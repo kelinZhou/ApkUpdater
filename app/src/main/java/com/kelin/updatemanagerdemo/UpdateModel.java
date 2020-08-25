@@ -24,7 +24,7 @@ public class UpdateModel implements UpdateInfo {
 
     @Override
     public String getDownLoadsUrl() {
-        return "http://file.lieluobo.testing/o_1cntnsvto19mn11p1qgtfvvdd77.apk";
+        return "https://www.wandoujia.com/apps/281291/binding?source=web_seo_baidu_binded";
     }
 
     @Override

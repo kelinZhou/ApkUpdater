@@ -1,9 +1,6 @@
 package com.kelin.apkUpdater.downloader.thread
 
 import android.os.Handler
-import android.util.Log
-import com.kelin.apkUpdater.ApkUpdater
-import com.kelin.apkUpdater.UpdateHelper
 import com.kelin.apkUpdater.downloader.DownLoadService
 import com.kelin.apkUpdater.downloader.FileInfo
 import com.kelin.apkUpdater.downloader.ThreadApi
@@ -12,6 +9,7 @@ import java.io.InputStream
 import java.io.RandomAccessFile
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 
@@ -118,7 +116,7 @@ class DownloadTask(private val fileInfo: FileInfo, private val threadCount: Int,
 
         @Synchronized
         private fun checkDownloadSuccess() {
-            if (downloadTreads.any { !isDownLoading }) {
+            if (downloadTreads.all { !isDownLoading }) {
                 downloadTreads.clear()
                 threadApi.deleteThread(threadInfo.url)
                 //更新下载进度

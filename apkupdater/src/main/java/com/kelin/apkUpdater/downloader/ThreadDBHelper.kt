@@ -67,7 +67,7 @@ internal class ThreadDBHelper private constructor(context: Context) : SQLiteOpen
          */
         private const val SQL_DELETE_ALL_THREAD = "DELETE FROM $DB_TABLE_NAME WHERE $FIELD_URL = ?"
         /**
-         * 跟新线程信息。
+         * 更新线程信息。
          */
         private const val SQL_UPDATE_THREAD = "UPDATE $DB_TABLE_NAME SET $FIELD_LOADED_LENGTH = ? WHERE $FIELD_URL = ? AND $FIELD_THREAD_ID = ?"
         /**
