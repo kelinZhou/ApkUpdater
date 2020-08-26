@@ -112,6 +112,12 @@ class ApkUpdater private constructor(
      */
     private val localVersionCode by lazy { getCurrentVersionCode(mApplicationContext) }
 
+    /**
+     * 判断当前版本是否是强制更新。
+     */
+    private val isForceUpdate: Boolean
+        get() = if (mUpdateInfo != null) isForceUpdate(mUpdateInfo!!, mApplicationContext) else false
+
     //接口回调，下载进度
     private val serviceConnection: ServiceConnection by lazy {
         object : ServiceConnection {
@@ -157,15 +163,6 @@ class ApkUpdater private constructor(
     }
 
     /**
-     * 判断当前版本是否是强制更新。
-     *
-     * @return 如果是返回true，否则返回false。
-     */
-    private fun isForceUpdate(updateInfo: UpdateInfo): Boolean {
-        return isForceUpdate(updateInfo, mApplicationContext)
-    }
-
-    /**
      * 显示进度条对话框。
      */
     private fun showProgressDialog() {
@@ -174,7 +171,7 @@ class ApkUpdater private constructor(
         } else {
             if (dialogCallback != null) {
                 mDefaultDialog!!.dismissAll()
-                dialogCallback.onShowProgressDialog(this, isForceUpdate(mUpdateInfo!!))
+                dialogCallback.onShowProgressDialog(this, isForceUpdate)
             } else {
                 throw IllegalArgumentException("you mast call ApkUpdater's \"setCallback(CompleteUpdateCallback callback)\" Method。")
             }
@@ -209,7 +206,7 @@ class ApkUpdater private constructor(
         }
         if (!NetWorkStateUtil.isConnected(mApplicationContext)) {
             if (mCallback != null) {
-                mCallback!!.onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, isForceUpdate(updateInfo))
+                mCallback!!.onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, isForceUpdate)
                 mCallback!!.onCompleted()
             }
             return
@@ -221,7 +218,7 @@ class ApkUpdater private constructor(
                     if (completeUpdateCallback != null) {
                         completeUpdateCallback!!.onDownloadFailed()
                     }
-                    mCallback!!.onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, isForceUpdate(updateInfo))
+                    mCallback!!.onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, isForceUpdate)
                     mCallback!!.onCompleted()
                 }
                 return
@@ -230,7 +227,7 @@ class ApkUpdater private constructor(
             mAutoInstall = autoInstall
             mIsChecked = true
             mUpdateInfo = updateInfo
-            loadDialogConfig.isForceUpdate = isForceUpdate(updateInfo)
+            loadDialogConfig.isForceUpdate = isForceUpdate
             informDialogConfig.message = updateInfo.updateMessage
             //如果这个条件满足说明上一次没有安装。有因为即使上一次没有安装最新的版本也有可能超出了上一次下载的版本，所以要在这里判断。
             val apkPath = getApkPathFromSp(mApplicationContext)
@@ -245,11 +242,11 @@ class ApkUpdater private constructor(
 
     private fun onShowUpdateInformDialog() {
         if (mDefaultDialog != null) {
-            informDialogConfig.isForceUpdate = isForceUpdate(mUpdateInfo!!)
+            informDialogConfig.isForceUpdate = isForceUpdate
             showUpdateInformDialog()
         } else {
             if (dialogCallback != null) {
-                dialogCallback.onShowCheckHintDialog(this@ApkUpdater, mUpdateInfo!!, isForceUpdate(mUpdateInfo!!))
+                dialogCallback.onShowCheckHintDialog(this@ApkUpdater, mUpdateInfo!!, isForceUpdate)
             } else {
                 throw IllegalArgumentException("you mast call ApkUpdater's \"setCallback(CompleteUpdateCallback callback)\" Method。")
             }
@@ -302,7 +299,7 @@ class ApkUpdater private constructor(
                 if (completeUpdateCallback != null) {
                     completeUpdateCallback!!.onDownloadCancelled()
                 }
-                mCallback!!.onFiled(mIsAutoCheck, true, mHaveNewVersion, localVersionName, 0, isForceUpdate(mUpdateInfo!!))
+                mCallback!!.onFiled(mIsAutoCheck, true, mHaveNewVersion, localVersionName, 0, isForceUpdate)
                 mCallback!!.onCompleted()
             }
         }
@@ -324,7 +321,7 @@ class ApkUpdater private constructor(
                                 val completeUpdateCallback = completeUpdateCallback
                                 completeUpdateCallback?.onDownloadSuccess(apkFile, true)
                                 if (mCallback != null) {
-                                    mCallback!!.onFiled(mIsAutoCheck, isCanceled = true, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, isForceUpdate = isForceUpdate(mUpdateInfo!!))
+                                    mCallback!!.onFiled(mIsAutoCheck, isCanceled = true, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, isForceUpdate = isForceUpdate)
                                     mCallback!!.onCompleted()
                                 }
                             }
@@ -336,7 +333,7 @@ class ApkUpdater private constructor(
             val completeUpdateCallback = completeUpdateCallback
             completeUpdateCallback?.onDownloadSuccess(apkFile, true)
             if (mCallback != null) {
-                mCallback!!.onSuccess(mIsAutoCheck, true, localVersionName, isForceUpdate(mUpdateInfo!!))
+                mCallback!!.onSuccess(mIsAutoCheck, true, localVersionName, isForceUpdate)
                 mCallback!!.onCompleted()
             }
         }
@@ -348,7 +345,7 @@ class ApkUpdater private constructor(
         if (!installApk) {
             completeUpdateCallback?.onInstallFailed()
             if (mCallback != null) {
-                mCallback!!.onFiled(mIsAutoCheck, isCanceled = false, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, isForceUpdate = isForceUpdate(mUpdateInfo!!))
+                mCallback!!.onFiled(mIsAutoCheck, isCanceled = false, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, isForceUpdate = isForceUpdate)
                 mCallback!!.onCompleted()
             }
         } //如果installApk为true则不需要回调了，因为安装成功必定会杀死进程。杀掉进程后回调已经没有意义了。
@@ -424,7 +421,7 @@ class ApkUpdater private constructor(
         this.notifyCationDesc = notifyCationDesc
         mAutoInstall = autoInstall
         mUpdateInfo = updateInfo
-        loadDialogConfig.isForceUpdate = isForceUpdate(updateInfo)
+        loadDialogConfig.isForceUpdate = isForceUpdate
         if (checkCanDownloadable()) {
             startDownload()
         }
@@ -437,7 +434,7 @@ class ApkUpdater private constructor(
         mServiceIntent = Intent(mApplicationContext, DownloadService::class.java)
         mServiceIntent!!.putExtra(DownloadService.KEY_APK_NAME, getApkName(mUpdateInfo!!))
         mServiceIntent!!.putExtra(DownloadService.KEY_DOWNLOAD_URL, mUpdateInfo!!.downLoadsUrl)
-        mServiceIntent!!.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate(mUpdateInfo!!))
+        mServiceIntent!!.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate)
         mServiceIntent!!.putExtra(DownloadService.KEY_NOTIFY_TITLE, notifyCationTitle)
         mServiceIntent!!.putExtra(DownloadService.KEY_NOTIFY_DESCRIPTION, notifyCationDesc)
         mApplicationContext.startService(mServiceIntent)
@@ -450,7 +447,7 @@ class ApkUpdater private constructor(
      * @return 返回一个以 "包名+日期" 命名的Apk名称。
      */
     private val defaultApkName: String
-        private get() {
+        get() {
             val format = SimpleDateFormat("yyyy-M-d_HH-MM", Locale.CHINA)
             val formatDate = format.format(Date())
             return mApplicationContext.packageName + formatDate + ".apk"
@@ -691,7 +688,7 @@ class ApkUpdater private constructor(
                 if (completeUpdateCallback != null) {
                     completeUpdateCallback!!.onDownloadFailed()
                 }
-                mCallback!!.onFiled(mIsAutoCheck, false, mHaveNewVersion, localVersionName, getDownloadFailedCount(mApplicationContext), isForceUpdate(mUpdateInfo!!))
+                mCallback!!.onFiled(mIsAutoCheck, false, mHaveNewVersion, localVersionName, getDownloadFailedCount(mApplicationContext), isForceUpdate)
                 mCallback!!.onCompleted()
             } else {
                 Toast.makeText(mApplicationContext, "sorry, 下载失败了~", Toast.LENGTH_SHORT).show()
@@ -732,7 +729,7 @@ class ApkUpdater private constructor(
                     if (isBindService) {
                         callback?.onDownloadPending()
                     } else {
-                        mCallback!!.onFiled(mIsAutoCheck, false, mHaveNewVersion, localVersionName, 0, isForceUpdate(mUpdateInfo!!))
+                        mCallback!!.onFiled(mIsAutoCheck, false, mHaveNewVersion, localVersionName, 0, isForceUpdate)
                         mCallback!!.onCompleted()
                     }
                 }
@@ -741,7 +738,7 @@ class ApkUpdater private constructor(
                 } else {
                     if (mCallback != null) {
                         callback?.onDownloadCancelled()
-                        mCallback!!.onFiled(mIsAutoCheck, true, mHaveNewVersion, localVersionName, 0, isForceUpdate(mUpdateInfo!!))
+                        mCallback!!.onFiled(mIsAutoCheck, true, mHaveNewVersion, localVersionName, 0, isForceUpdate)
                         mCallback!!.onCompleted()
                     }
                 }
@@ -749,7 +746,7 @@ class ApkUpdater private constructor(
                     mIsProgressDialogHidden = true
                     silentDownload()
                 }
-                Companion.STATE_CHECK_MD5_FAILED -> if (isForceUpdate(mUpdateInfo!!)) {
+                Companion.STATE_CHECK_MD5_FAILED -> if (isForceUpdate) {
                     unregisterNetWorkReceiver()
                     stopService() //结束服务
                     mDefaultDialog!!.dismissAll()
