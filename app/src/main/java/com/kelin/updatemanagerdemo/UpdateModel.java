@@ -1,6 +1,6 @@
 package com.kelin.updatemanagerdemo;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.kelin.apkUpdater.SignatureType;
 import com.kelin.apkUpdater.UpdateInfo;
@@ -25,7 +25,7 @@ public class UpdateModel implements UpdateInfo {
 
     @Override
     public String getDownLoadsUrl() {
-        return "http://file.testing.lieluobo.net/o_1di4u907j7go1pn4f8e4s41h317.apk";
+        return "https://www.wandoujia.com/apps/281291/binding?source=web_seo_baidu_binded";
     }
 
     @Override
