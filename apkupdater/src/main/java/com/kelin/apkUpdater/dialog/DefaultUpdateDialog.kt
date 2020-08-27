@@ -48,6 +48,7 @@ class DefaultUpdateDialog(private val updater: ApkUpdater, @StyleRes private val
         tvKelinApkUpdaterSure.apply {
             text = "立即更新"
             setOnClickListener {
+                setOnClickListener(null)
                 if (!isForceUpdate) {
                     dismiss()
                 } else {
@@ -94,6 +95,10 @@ class DefaultUpdateDialog(private val updater: ApkUpdater, @StyleRes private val
                 }
             }
         }
+    }
+
+    override fun onNetworkError() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun onProgress(total: Long, current: Long, percentage: Int) {

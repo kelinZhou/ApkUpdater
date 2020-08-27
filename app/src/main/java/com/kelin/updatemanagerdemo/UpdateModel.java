@@ -72,6 +72,6 @@ public class UpdateModel implements UpdateInfo {
     @Nullable
     @Override
     public String getSignature() {
-        return "";
+        return "d";
     }
 }

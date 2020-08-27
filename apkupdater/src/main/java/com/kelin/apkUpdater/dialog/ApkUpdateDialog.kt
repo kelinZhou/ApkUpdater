@@ -35,6 +35,11 @@ interface ApkUpdateDialog {
     fun onProgress(total: Long, current: Long, percentage: Int)
 
     /**
+     * 网络错误时调用，如果在下载的过程中出现了网络连接断开等错误，而你希望把该错误告知给用户，那么你就需要重写该方法，并做出相应的处理。
+     */
+    fun onNetworkError()
+
+    /**
      * 结束弹窗。
      */
     fun dismiss()

@@ -8,9 +8,7 @@ import android.content.ServiceConnection
 import android.net.ConnectivityManager
 import android.os.Build
 import android.os.IBinder
-import androidx.annotation.StyleRes
 import android.text.TextUtils
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.kelin.apkUpdater.DownloadService.DownloadBinder
 import com.kelin.apkUpdater.UpdateHelper.clearDownloadFailedCount
@@ -153,26 +151,11 @@ class ApkUpdater private constructor(
         } else if (mUpdateInfo != updateInfo) {
             mUpdateInfo = updateInfo
             mIsAutoCheck = autoCheck
-            if (!NetWorkStateUtil.isConnected(mApplicationContext)) {
-                if (mCallback != null) {
-                    AlertDialog.Builder(ActivityStackManager.requireStackTopActivity())
-                            .setCancelable(false)
-                            .setTitle("提示：")
-                            .setMessage("网络不可用，请尝试切换您的网络环境后再试~")
-                            .setNegativeButton("确定") { dialog, which ->
-                                dialog.dismiss()
-                                mCallback?.apply {
-                                    onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, isForceUpdate)
-                                    onCompleted()
-                                }
-                            }.create().show()
-
-                }
-            } else if (TextUtils.isEmpty(updateInfo.downLoadsUrl)) {
-                mCallback?.also {
-                    (it as? CompleteUpdateCallback)?.onDownloadFailed()
-                    it.onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, isForceUpdate)
-                    it.onCompleted()
+            if (TextUtils.isEmpty(updateInfo.downLoadsUrl)) {
+                mCallback?.apply {
+                    (this as? CompleteUpdateCallback)?.onDownloadFailed()
+                    onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, isForceUpdate)
+                    onCompleted()
                 }
             } else {
                 mHaveNewVersion = true
@@ -202,11 +185,13 @@ class ApkUpdater private constructor(
      * @param isContinue 是否继续，如果继续则说明统一更新，否则就是不统一更新。
      */
     fun setCheckHandlerResult(isContinue: Boolean) {
-        check(!(dialog !is DefaultUpdateDialog || !mIsChecked)) {
-            //如果不是自定义UI交互或没有使用API提供的check方法检测更新的话不允许调用该方法。
-            "Because of your dialog is not custom, so you can't call the method."
+        if (!isBindService) { //防止重复调用，如果服务已经启动了就不在生效。
+            check(!(dialog !is DefaultUpdateDialog || !mIsChecked)) {
+                //如果不是自定义UI交互或没有使用API提供的check方法检测更新的话不允许调用该方法。
+                "Because of your dialog is not custom, so you can't call the method."
+            }
+            respondCheckHandlerResult(isContinue)
         }
-        respondCheckHandlerResult(isContinue)
     }
 
     /**
@@ -277,7 +262,7 @@ class ApkUpdater private constructor(
 
     private fun checkCanDownloadable(): Boolean {
         registerNetWorkReceiver() //注册一个网络状态改变的广播接收者。无论网络是否连接成功都要注册，因为下载过程中可能会断网。
-        if (!NetWorkStateUtil.isConnected(mApplicationContext) && !NetWorkStateUtil.isWifiConnected(mApplicationContext)) {
+        if (!NetWorkStateUtil.isConnected(mApplicationContext)) {
             showWifiOrMobileUnusableDialog()
             return false
         }
@@ -350,14 +335,16 @@ class ApkUpdater private constructor(
      * 开始下载。
      */
     private fun startDownload() {
-        mServiceIntent = Intent(mApplicationContext, DownloadService::class.java)
-        mServiceIntent!!.putExtra(DownloadService.KEY_APK_NAME, getApkName(mUpdateInfo!!))
-        mServiceIntent!!.putExtra(DownloadService.KEY_DOWNLOAD_URL, mUpdateInfo!!.downLoadsUrl)
-        mServiceIntent!!.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate)
-        mServiceIntent!!.putExtra(DownloadService.KEY_NOTIFY_TITLE, notifyCationTitle)
-        mServiceIntent!!.putExtra(DownloadService.KEY_NOTIFY_DESCRIPTION, notifyCationDesc)
-        mApplicationContext.startService(mServiceIntent)
-        isBindService = mApplicationContext.bindService(mServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+        if (!isBindService) {
+            mServiceIntent = Intent(mApplicationContext, DownloadService::class.java)
+            mServiceIntent!!.putExtra(DownloadService.KEY_APK_NAME, getApkName(mUpdateInfo!!))
+            mServiceIntent!!.putExtra(DownloadService.KEY_DOWNLOAD_URL, mUpdateInfo!!.downLoadsUrl)
+            mServiceIntent!!.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate)
+            mServiceIntent!!.putExtra(DownloadService.KEY_NOTIFY_TITLE, notifyCationTitle)
+            mServiceIntent!!.putExtra(DownloadService.KEY_NOTIFY_DESCRIPTION, notifyCationDesc)
+            mApplicationContext.startService(mServiceIntent)
+            isBindService = mApplicationContext.bindService(mServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+        }
     }
 
     /**
