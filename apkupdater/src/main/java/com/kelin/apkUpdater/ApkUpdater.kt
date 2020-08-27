@@ -95,10 +95,10 @@ class ApkUpdater private constructor(
     private val serviceConnection: ServiceConnection by lazy {
         object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName, service: IBinder) {
-                val binder = service as DownloadBinder
-                val downloadService = binder.service
-                downloadService.setOnProgressListener(mOnProgressListener)
-                downloadService.setServiceUnBindListener { isBindService = false }
+                (service as? DownloadBinder)?.service?.apply {
+                    setOnProgressListener(mOnProgressListener)
+                    setServiceUnBindListener { isBindService = false }
+                }
             }
 
             override fun onServiceDisconnected(name: ComponentName) {}
@@ -264,7 +264,7 @@ class ApkUpdater private constructor(
         return NetWorkStateUtil.isConnected(mApplicationContext)
     }
 
-    private fun getApkName(updateInfo: UpdateInfo): String? {
+    private fun getApkName(updateInfo: UpdateInfo): String {
         val apkName = updateInfo.apkName
         return if (apkName.isNullOrEmpty()) {
             defaultApkName
@@ -300,12 +300,9 @@ class ApkUpdater private constructor(
      */
     private fun startDownload() {
         if (!isBindService) {
-            mServiceIntent = Intent(mApplicationContext, DownloadService::class.java).apply {
-                putExtra(DownloadService.KEY_APK_NAME, getApkName(requireUpdateInfo))
-                putExtra(DownloadService.KEY_DOWNLOAD_URL, requireUpdateInfo.downLoadsUrl)
-                putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate)
-                mApplicationContext.startService(this)
-                isBindService = mApplicationContext.bindService(this, serviceConnection, Context.BIND_AUTO_CREATE)
+            mServiceIntent = DownloadService.obtainIntent(mApplicationContext, requireUpdateInfo.downLoadsUrl!!, isForceUpdate, getApkName(requireUpdateInfo)).also {
+                mApplicationContext.startService(it)
+                isBindService = mApplicationContext.bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
             }
         }
     }

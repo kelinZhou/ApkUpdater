@@ -8,7 +8,7 @@ import java.io.File
  * 创建时间 2017/3/15  下午1:13
  * 版本 v 1.0.0
  */
-internal interface DownloadProgressCallback {
+interface DownloadProgressCallback {
     /**
      * 当下载开始的时候调用。
      */
