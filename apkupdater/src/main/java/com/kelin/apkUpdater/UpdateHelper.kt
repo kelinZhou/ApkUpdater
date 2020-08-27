@@ -40,7 +40,6 @@ object UpdateHelper {
      *
      * @return 如果是返回true，否则返回false。
      */
-    @JvmStatic
     fun isForceUpdate(updateInfo: UpdateInfo, context: Context): Boolean {
         return if (!updateInfo.isForceUpdate) {
             false
@@ -65,7 +64,6 @@ object UpdateHelper {
      * @param context 需要一个上下文。
      * @return 返回当前的版本号。
      */
-    @JvmStatic
     fun getCurrentVersionCode(context: Context): Int {
         val packageManager = context.packageManager
         var packageInfo: PackageInfo? = null
@@ -83,7 +81,6 @@ object UpdateHelper {
      * @param context 需要一个上下文。
      * @return 返回当前的版本名称。
      */
-    @JvmStatic
     fun getCurrentVersionName(context: Context): String {
         val packageManager = context.packageManager
         var packageInfo: PackageInfo? = null
@@ -95,13 +92,22 @@ object UpdateHelper {
         return if (packageInfo != null) packageInfo.versionName else "未知版本"
     }
 
+    fun getAppName(context: Context, defName: String): String {
+        return try {
+            context.packageManager?.let {
+                it.getPackageInfo(context.packageName, 0)?.applicationInfo?.loadLabel(it)?.toString()
+            } ?: defName
+        } catch (e: Exception) {
+            defName
+        }
+    }
+
     /**
      * 安装APK
      *
      * @param context [android.app.Activity] 对象。
      * @param apkFile 安装包的路径
      */
-    @JvmStatic
     fun installApk(context: Context, apkFile: File?): Boolean {
         if (apkFile == null || !apkFile.exists()) {
             return false

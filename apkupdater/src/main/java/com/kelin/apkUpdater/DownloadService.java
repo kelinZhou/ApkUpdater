@@ -49,14 +49,6 @@ public class DownloadService extends Service {
      */
     public static final String KEY_DOWNLOAD_URL = "download_url";
     /**
-     * 用来获取通知栏标题的键。
-     */
-    public static final String KEY_NOTIFY_TITLE = "key_notify_title";
-    /**
-     * 用来获取通知栏描述的键。
-     */
-    public static final String KEY_NOTIFY_DESCRIPTION = "key_notify_description";
-    /**
      * 用来获取是否强制更新的键。
      */
     public static final String KEY_IS_FORCE_UPDATE = "key_is_force_update";
@@ -77,9 +69,7 @@ public class DownloadService extends Service {
     public Handler downLoadHandler;
 
     private Runnable progressRunnable;
-    private String mNotifyTitle;
     private boolean mIsForceUpdate;
-    private String mNotifyDescription;
     private String mApkName;
     private int mLastFraction = 0xFFFF_FFFF;
     /**
@@ -113,9 +103,7 @@ public class DownloadService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         String downloadUrl = intent.getStringExtra(KEY_DOWNLOAD_URL);
-        mNotifyTitle = intent.getStringExtra(KEY_NOTIFY_TITLE);
         mIsForceUpdate = intent.getBooleanExtra(KEY_IS_FORCE_UPDATE, false);
-        mNotifyDescription = intent.getStringExtra(KEY_NOTIFY_DESCRIPTION);
         mApkName = intent.getStringExtra(KEY_APK_NAME);
         downloadApk(downloadUrl);
         return new DownloadBinder();
@@ -132,7 +120,7 @@ public class DownloadService extends Service {
 
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
         int visibility = mIsForceUpdate ? DownloadManager.Request.VISIBILITY_HIDDEN : DownloadManager.Request.VISIBILITY_VISIBLE;
-        request.setTitle(mNotifyTitle).setDescription(mNotifyDescription).setNotificationVisibility(visibility).setDestinationInExternalFilesDir(getApplicationContext(), Environment.DIRECTORY_DOWNLOADS, mApkName);
+        request.setTitle(UpdateHelper.INSTANCE.getAppName(getApplicationContext(), "更新")).setNotificationVisibility(visibility).setDestinationInExternalFilesDir(getApplicationContext(), Environment.DIRECTORY_DOWNLOADS, mApkName);
         /*将下载请求放入队列， return下载任务的ID*/
         downloadId = downloadManager.enqueue(request);
 

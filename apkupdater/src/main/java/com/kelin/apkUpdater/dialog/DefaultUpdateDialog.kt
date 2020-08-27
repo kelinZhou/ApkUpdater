@@ -29,6 +29,7 @@ class DefaultUpdateDialog(private val updater: ApkUpdater, @StyleRes private val
     private var versionName: CharSequence? = null
     private var messageTitle: CharSequence? = null
     private var message: CharSequence? = null
+    private var hasNetworkErrorStatus = false
 
     init {
         isCancelable = false
@@ -98,11 +99,16 @@ class DefaultUpdateDialog(private val updater: ApkUpdater, @StyleRes private val
     }
 
     override fun onNetworkError() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        hasNetworkErrorStatus = true
+        tvKelinApkUpdaterSure.text = "网络已断开，等待恢复..."
     }
 
     override fun onProgress(total: Long, current: Long, percentage: Int) {
         if (!isDismissed) {
+            if (hasNetworkErrorStatus) {
+                hasNetworkErrorStatus = false
+                tvKelinApkUpdaterSure.text = "正在下载..."
+            }
             pbKelinApkUpdaterProgress.progress = percentage
         }
     }

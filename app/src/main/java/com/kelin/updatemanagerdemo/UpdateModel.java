@@ -25,12 +25,12 @@ public class UpdateModel implements UpdateInfo {
 
     @Override
     public String getDownLoadsUrl() {
-        return "http://test-cloud-yxholding-com.oss-cn-shanghai.aliyuncs.com/yx-logistics/file/file/20200819/1597817819773.apk";
+        return "http://test-cloud-yxholding-com.oss-cn-shanghai.aliyuncs.com/yx-logistics/file/file/20200703/1593709201374.apk";
     }
 
     @Override
     public boolean isForceUpdate() {
-        return true;
+        return false;
     }
 
     /**
@@ -72,6 +72,6 @@ public class UpdateModel implements UpdateInfo {
     @Nullable
     @Override
     public String getSignature() {
-        return "d";
+        return "";
     }
 }

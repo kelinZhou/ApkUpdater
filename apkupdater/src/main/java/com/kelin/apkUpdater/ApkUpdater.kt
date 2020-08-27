@@ -42,8 +42,6 @@ import java.util.*
  * 版本 v 1.0.0
  */
 class ApkUpdater private constructor(
-        private var notifyCationTitle: CharSequence?,
-        private var notifyCationDesc: CharSequence?,
         private val dialogGenerator: ((updater: ApkUpdater) -> ApkUpdateDialog)?,
         private var mCallback: IUpdateCallback?
 ) {
@@ -91,7 +89,7 @@ class ApkUpdater private constructor(
      * 判断当前版本是否是强制更新。
      */
     private val isForceUpdate: Boolean
-        get() = if (mUpdateInfo != null) isForceUpdate(mUpdateInfo!!, mApplicationContext) else false
+        get() = if (mUpdateInfo != null) isForceUpdate(requireUpdateInfo, mApplicationContext) else false
 
     //接口回调，下载进度
     private val serviceConnection: ServiceConnection by lazy {
@@ -203,6 +201,7 @@ class ApkUpdater private constructor(
         if (isContinue) {
             val apkFile = File(getApkPathFromSp(mApplicationContext))
             if (mIsLoaded && checkFileSignature(apkFile)) {
+                dialog.dismiss()
                 handlerDownloadSuccess(apkFile)
             } else {
                 if (apkFile.exists()) {
@@ -262,29 +261,7 @@ class ApkUpdater private constructor(
 
     private fun checkCanDownloadable(): Boolean {
         registerNetWorkReceiver() //注册一个网络状态改变的广播接收者。无论网络是否连接成功都要注册，因为下载过程中可能会断网。
-        if (!NetWorkStateUtil.isConnected(mApplicationContext)) {
-            showWifiOrMobileUnusableDialog()
-            return false
-        }
-        return true
-    }
-
-    private fun showWifiOrMobileUnusableDialog() {
-        AlertDialog.Builder(ActivityStackManager.requireStackTopActivity())
-                .setCancelable(false)
-                .setTitle("提示：")
-                .setMessage("网络连接已经断开，请稍后再试。")
-                .setNegativeButton("确定") { dialog, which ->
-                    if (isBindService) {
-                        (mCallback as? CompleteUpdateCallback)?.onDownloadPending()
-                    } else {
-                        mCallback?.apply {
-                            onFiled(mIsAutoCheck, false, mHaveNewVersion, localVersionName, 0, isForceUpdate)
-                            onCompleted()
-                        }
-                    }
-                }
-                .create()
+        return NetWorkStateUtil.isConnected(mApplicationContext)
     }
 
     private fun getApkName(updateInfo: UpdateInfo): String? {
@@ -299,21 +276,10 @@ class ApkUpdater private constructor(
     /**
      * 开始下载。
      *
-     * @param updateInfo 更新信息对象。
-     */
-    fun download(updateInfo: UpdateInfo, autoInstall: Boolean = true) {
-        download(updateInfo, null, null, autoInstall)
-    }
-
-    /**
-     * 开始下载。
-     *
      * @param updateInfo        更新信息对象。
-     * @param notifyCationTitle 下载过程中通知栏的标题。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
-     * @param notifyCationDesc  下载过程中通知栏的描述。如果是强制更新的话该参数可以为null，因为强制更新没有通知栏提示。
      * @param autoInstall       是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
      */
-    fun download(updateInfo: UpdateInfo, notifyCationTitle: CharSequence?, notifyCationDesc: CharSequence?, autoInstall: Boolean) {
+    fun download(updateInfo: UpdateInfo, autoInstall: Boolean = true) {
         check(!mIsChecked) {
             //如果检查更新不是自己检查的就不能调用这个方法。
             "Because you update the action is completed, so you can't call this method."
@@ -322,8 +288,6 @@ class ApkUpdater private constructor(
         if (TextUtils.isEmpty(updateInfo.downLoadsUrl)) {
             return
         }
-        this.notifyCationTitle = if (TextUtils.isEmpty(notifyCationTitle)) "正在下载更新" else notifyCationTitle
-        this.notifyCationDesc = notifyCationDesc
         mAutoInstall = autoInstall
         mUpdateInfo = updateInfo
         if (checkCanDownloadable()) {
@@ -336,14 +300,13 @@ class ApkUpdater private constructor(
      */
     private fun startDownload() {
         if (!isBindService) {
-            mServiceIntent = Intent(mApplicationContext, DownloadService::class.java)
-            mServiceIntent!!.putExtra(DownloadService.KEY_APK_NAME, getApkName(mUpdateInfo!!))
-            mServiceIntent!!.putExtra(DownloadService.KEY_DOWNLOAD_URL, mUpdateInfo!!.downLoadsUrl)
-            mServiceIntent!!.putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate)
-            mServiceIntent!!.putExtra(DownloadService.KEY_NOTIFY_TITLE, notifyCationTitle)
-            mServiceIntent!!.putExtra(DownloadService.KEY_NOTIFY_DESCRIPTION, notifyCationDesc)
-            mApplicationContext.startService(mServiceIntent)
-            isBindService = mApplicationContext.bindService(mServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+            mServiceIntent = Intent(mApplicationContext, DownloadService::class.java).apply {
+                putExtra(DownloadService.KEY_APK_NAME, getApkName(requireUpdateInfo))
+                putExtra(DownloadService.KEY_DOWNLOAD_URL, requireUpdateInfo.downLoadsUrl)
+                putExtra(DownloadService.KEY_IS_FORCE_UPDATE, isForceUpdate)
+                mApplicationContext.startService(this)
+                isBindService = mApplicationContext.bindService(this, serviceConnection, Context.BIND_AUTO_CREATE)
+            }
         }
     }
 
@@ -365,14 +328,6 @@ class ApkUpdater private constructor(
          */
         private var callback: IUpdateCallback? = null
         /**
-         * 通知栏的标题。
-         */
-        private var mTitle: CharSequence? = null
-        /**
-         * 通知栏的描述。
-         */
-        private var mDescription: CharSequence? = null
-        /**
          * 自定义弹窗。
          */
         private var customDialogGenerator: ((updater: ApkUpdater) -> ApkUpdateDialog)? = null
@@ -384,23 +339,6 @@ class ApkUpdater private constructor(
          */
         fun setCallback(callback: IUpdateCallback?): Builder {
             this.callback = callback
-            return this
-        }
-
-
-        /**
-         * 设置通知栏的标题。
-         */
-        fun setNotifyTitle(title: CharSequence?): Builder {
-            mTitle = title
-            return this
-        }
-
-        /**
-         * 设置通知栏的描述。
-         */
-        fun setNotifyDescription(description: CharSequence?): Builder {
-            mDescription = description
             return this
         }
 
@@ -421,8 +359,6 @@ class ApkUpdater private constructor(
          */
         fun builder(): ApkUpdater {
             return ApkUpdater(
-                    mTitle,
-                    mDescription,
                     customDialogGenerator,
                     callback
             )
@@ -438,7 +374,7 @@ class ApkUpdater private constructor(
          * 的是WiFi，如果为 [ConnectivityManager.TYPE_MOBILE] 则说明当前断开链接的是流量。
          */
         override fun onDisconnected(type: Int) {
-            showWifiOrMobileUnusableDialog()
+            dialog.onNetworkError()
         }
 
         /**
@@ -470,8 +406,8 @@ class ApkUpdater private constructor(
         return if (!apkFile.exists()) {
             false
         } else {
-            val signatureType = mUpdateInfo!!.signatureType
-            val availableSignature = mUpdateInfo!!.signature
+            val signatureType = requireUpdateInfo.signatureType
+            val availableSignature = requireUpdateInfo.signature
             if (signatureType != null && !TextUtils.isEmpty(availableSignature)) {
                 TextUtils.equals(availableSignature, getFileSignature(apkFile, signatureType))
             } else {
@@ -487,26 +423,27 @@ class ApkUpdater private constructor(
 
         override fun onProgress(total: Long, current: Long, percentage: Int) {
             if (percentage == 100 || total == current) {
-                putApkVersionCode2Sp(mApplicationContext, mUpdateInfo!!.versionCode)
+                putApkVersionCode2Sp(mApplicationContext, requireUpdateInfo.versionCode)
             }
             (mCallback as? CompleteUpdateCallback)?.onProgress(total, current, percentage)
-            dialog.onProgress(total, current, percentage)
+            //因为回调有延迟，所以这里判断一下是否有网络，如果没有网络就不在更新进度，否则明明已经提示用户没有网了，但是进度还会更新，有点诡异。
+            if (NetWorkStateUtil.isConnected(mApplicationContext)) {
+                dialog.onProgress(total, current, percentage)
+            }
         }
 
         override fun onLoadSuccess(apkFile: File, isCache: Boolean) {
+            dialog.dismiss()
             if (!checkFileSignature(apkFile)) {
                 removeOldApk(mApplicationContext)
                 downloadFailedCountPlus(mApplicationContext)
-                dialog.dismiss()
                 AlertDialog.Builder(ActivityStackManager.requireStackTopActivity())
                         .setCancelable(false)
                         .setTitle("提示：")
                         .setMessage("下载失败，请尝试切换您的网络环境后再试~")
-                        .setNegativeButton("确定") { dialog, which ->
-                            dialog.dismiss()
+                        .setNegativeButton("确定") { _, _ ->
                             mOnProgressListener.onLoadFailed()
-                        }
-                        .create().show()
+                        }.create().show()
             } else {
                 clearDownloadFailedCount(mApplicationContext)
                 unregisterNetWorkReceiver()

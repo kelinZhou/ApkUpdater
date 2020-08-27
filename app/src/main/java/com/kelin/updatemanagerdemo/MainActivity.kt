@@ -9,11 +9,9 @@ import com.kelin.apkUpdater.ApkUpdater
 import com.kelin.apkUpdater.callback.IUpdateCallback
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
-    private val mUpdater by lazy {
-        ApkUpdater.Builder()
-                .setCallback(ApkCompleteUpdateCallback())
-                .builder()
-    }
+    private val mUpdater by lazy(
+            ApkUpdater.Builder().setCallback(ApkCompleteUpdateCallback())::builder
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
