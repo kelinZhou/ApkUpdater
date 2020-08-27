@@ -100,7 +100,7 @@ class DefaultUpdateDialog(private val updater: ApkUpdater, @StyleRes private val
 
     override fun onNetworkError() {
         hasNetworkErrorStatus = true
-        tvKelinApkUpdaterSure.text = "网络已断开，等待恢复..."
+        tvKelinApkUpdaterSure?.text = "网络已断开，等待恢复..."
     }
 
     override fun onProgress(total: Long, current: Long, percentage: Int) {
