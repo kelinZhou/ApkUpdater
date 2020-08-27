@@ -20,17 +20,17 @@ public class UpdateModel implements UpdateInfo {
 
     @Override
     public String getVersionName() {
-        return null;
+        return "v1.3.1";
     }
 
     @Override
     public String getDownLoadsUrl() {
-        return "https://www.wandoujia.com/apps/281291/binding?source=web_seo_baidu_binded";
+        return "http://test-cloud-yxholding-com.oss-cn-shanghai.aliyuncs.com/yx-logistics/file/file/20200819/1597817819773.apk";
     }
 
     @Override
     public boolean isForceUpdate() {
-        return false;
+        return true;
     }
 
     /**
@@ -50,6 +50,12 @@ public class UpdateModel implements UpdateInfo {
     @Override
     public String getApkName() {
         return null;
+    }
+
+    @Nullable
+    @Override
+    public CharSequence getUpdateMessageTitle() {
+        return "更新以下内容";
     }
 
     @Override

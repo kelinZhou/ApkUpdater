@@ -2,5 +2,6 @@
 <resources>
     <color name="colorTheme">?colorPrimary</color>
     <color name="colorPrimary">@color/colorTheme</color>
+    <color name="colorAccent">?colorAccent</color>
     <color name="colorDefaultProgressColor">#2E8B57</color>
 </resources>

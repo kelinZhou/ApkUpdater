@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:background="#A000"
+    android:layout_marginStart="28dp"
+    android:layout_marginEnd="28dp">
+
+    <View
+        android:id="@+id/vKelinApkUpdaterUpPoint"
+        android:layout_width="0dp"
+        android:layout_height="1px"
+        app:layout_constraintVertical_bias="0.35"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="@id/ivKelinApkUpdaterUpdateDialogIcon"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="@id/ivKelinApkUpdaterUpdateDialogIcon" />
+
+    <TextView
+        android:id="@+id/tvKelinApkUpdaterBg"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_com_kelin_apkupdater_shape_dialog_bg"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/vKelinApkUpdaterUpPoint"
+        app:layout_constraintBottom_toBottomOf="@id/vKelinApkUpdaterDownPoint"/>
+
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/ivKelinApkUpdaterUpdateDialogIcon"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_kelin_apk_updater_update_icon"
+        tools:ignore="VectorDrawableCompat" />
+
+    <TextView
+        android:id="@+id/tvKelinApkUpdaterLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="30dp"
+        android:paddingEnd="30dp"
+        android:textColor="#333333"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:text="@string/kelin_apk_updater_update_dialog_label"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivKelinApkUpdaterUpdateDialogIcon"
+        android:layout_marginTop="12dp"/>
+
+    <TextView
+        android:id="@+id/tvKelinApkUpdaterVersion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#666666"
+        android:textSize="12sp"
+        tools:text="v1.1.0"
+        android:layout_marginTop="2dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvKelinApkUpdaterLabel" />
+
+    <TextView
+        android:id="@+id/tvKelinApkUpdaterTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:paddingStart="30dp"
+        android:paddingEnd="30dp"
+        android:textColor="#333333"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        tools:text="发现新版本"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvKelinApkUpdaterVersion"
+        android:layout_marginTop="12dp"/>
+
+    <com.kelin.apkUpdater.maxsizeview.MaxSizeScrollView
+        android:id="@+id/slKelinApkUpdaterContent"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:maxHeight="160dp"
+        android:minHeight="80dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvKelinApkUpdaterTitle">
+
+        <TextView
+            android:id="@+id/tvKelinApkUpdaterUpdateContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingMultiplier="1.4"
+            android:paddingStart="30dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="30dp"
+            android:paddingBottom="12dp"
+            android:textColor="#333333"
+            android:textSize="14sp"
+            tools:text="1, 全新的界面和功能\n2, 更清晰、更简单的操作\n3, 更快捷的搜索、订阅功能\n4, 新增管理简历库、职位库功能\n5, 新增雇主公司主页\n6, 新增通讯录、成员管理等功能" />
+    </com.kelin.apkUpdater.maxsizeview.MaxSizeScrollView>
+    <ProgressBar
+        android:id="@+id/pbKelinApkUpdaterProgress"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="30dp"
+        android:layout_marginBottom="20dp"
+        android:progressDrawable="@drawable/progress_kelin_apk_updater_progress_button"
+        android:progress="0"
+        tools:progress="50"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/slKelinApkUpdaterContent"/>
+
+    <TextView
+        android:id="@+id/tvKelinApkUpdaterSure"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        tools:text="立即升级"
+        app:layout_constraintLeft_toLeftOf="@id/pbKelinApkUpdaterProgress"
+        app:layout_constraintRight_toRightOf="@id/pbKelinApkUpdaterProgress"
+        app:layout_constraintTop_toTopOf="@id/pbKelinApkUpdaterProgress"
+        app:layout_constraintBottom_toBottomOf="@id/pbKelinApkUpdaterProgress"/>
+
+    <View
+        android:id="@+id/vKelinApkUpdaterDownPoint"
+        android:layout_width="1px"
+        android:layout_height="1px"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvKelinApkUpdaterSure"
+        android:layout_marginTop="20dp" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/ivKelinApkUpdaterUpdateDialogDismiss"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="20dp"
+        app:srcCompat="@drawable/ic_kelin_apk_updater_dialog_close"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvKelinApkUpdaterBg"
+        tools:ignore="VectorDrawableCompat" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

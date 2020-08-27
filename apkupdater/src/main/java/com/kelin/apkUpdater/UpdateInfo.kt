@@ -50,6 +50,11 @@ interface UpdateInfo {
     val apkName: String?
 
     /**
+     * 更新标题，例如"更新以下内容"，用于显示在弹窗中。
+     */
+    val updateMessageTitle: CharSequence?
+
+    /**
      * 获取更新的内容。就是你本次更新了那些东西可以在这里返回，这里返回的内容会现在是Dialog的消息中，如果你没有禁用Dialog的话。
      *
      * @return 返回你本次更新的内容。

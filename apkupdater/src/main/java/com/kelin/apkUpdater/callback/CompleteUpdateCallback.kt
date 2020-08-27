@@ -11,15 +11,6 @@ import java.io.File
  */
 abstract class CompleteUpdateCallback : IUpdateCallback {
     /**
-     * 当用户需要静默下载的时候调用。通常情况下该方法不会执行，如果你使用了我所提供的Dialog(没有自定义Dialog的话)，在非强制更新的时候
-     * 下载进度Dialog上会有一个名为悄悄下载的按钮，点击这个按钮后就会执行该方法。
-     * 如果你使用了自定义Dialog的话你可以在用户希望静默下载的时候调用 [ApkUpdater.silentDownload] 方法，这样的话该回调也会被执行。
-     *
-     * @param apkUpdater [ApkUpdater] 对象。
-     */
-    override fun onSilentDownload(apkUpdater: ApkUpdater) {}
-
-    /**
      * 开始下载，在开始执行下载的时候调用。
      */
     fun onStartDownLoad() {}

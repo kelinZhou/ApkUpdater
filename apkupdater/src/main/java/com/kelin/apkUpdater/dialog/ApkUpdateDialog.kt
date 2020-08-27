@@ -1,0 +1,41 @@
+package com.kelin.apkUpdater.dialog
+
+import android.app.Activity
+import com.kelin.apkUpdater.ApkUpdater
+
+/**
+ * **描述:** 安装包升级弹窗。
+ *
+ * **创建人:** kelin
+ *
+ * **创建时间:** 2020/8/26 5:04 PM
+ *
+ * **版本:** v 1.0.0
+ */
+interface ApkUpdateDialog {
+    /**
+     * 当需要显示检查更新提示对话框的时候调用。你需要在这里进行检查更新提示对话框的显示。
+     * 在用户做出相应的操作后，你应当调用[ApkUpdater.setCheckHandlerResult]方法进行下一步的操作。
+     *
+     * @param activity 弹窗必须依赖于Activity。
+     * @param isForce 是否是强制更新。
+     * @see ApkUpdater.setCheckHandlerResult
+     */
+    fun show(activity: Activity, version: String?, messageTitle: CharSequence?, message: CharSequence?, isForce: Boolean)
+
+
+    /**
+     * 下载进度更新的时候调用。如果您是自定义的UI交互的话您需要覆盖此方法，并在此方法中做更新进度的操作。
+     * 您还需要在进度完成后进行销毁dialog的操作。
+     *
+     * @param total      文件总大小(字节)。
+     * @param current    当前的进度(字节)。
+     * @param percentage 当前下载进度的百分比。
+     */
+    fun onProgress(total: Long, current: Long, percentage: Int)
+
+    /**
+     * 结束弹窗。
+     */
+    fun dismiss()
+}

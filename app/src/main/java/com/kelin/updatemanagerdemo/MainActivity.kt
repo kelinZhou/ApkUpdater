@@ -12,7 +12,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private val mUpdater by lazy {
         ApkUpdater.Builder()
                 .setCallback(ApkCompleteUpdateCallback())
-                .setCheckWiFiState(true)
                 .builder()
     }
 
@@ -31,10 +30,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private inner class ApkCompleteUpdateCallback : IUpdateCallback {
-        override fun onSilentDownload(apkUpdater: ApkUpdater) {
-            Toast.makeText(applicationContext, "静默下载", Toast.LENGTH_SHORT).show()
-            //apkUpdater.removeCallback();  //如果在用户点击静默安装之后不希望在监听后续的回调，则可以调用该方法。
-        }
 
         override fun onSuccess(isAutoCheck: Boolean, haveNewVersion: Boolean, curVersionName: String, isForceUpdate: Boolean) {
             if (!isAutoCheck && !haveNewVersion) {
@@ -57,7 +52,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
 
         override fun onCompleted() {
-            Toast.makeText(applicationContext, "完成", Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, "结束", Toast.LENGTH_SHORT).show()
         }
     }
 }

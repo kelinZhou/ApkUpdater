@@ -2,4 +2,5 @@
     <string name="app_name">AkpUpdater</string>
     <string name="downloader_default_percentage">0 %</string>
     <string name="downloader_icon">icon</string>
+    <string name="kelin_apk_updater_update_dialog_label">发现新版本</string>
 </resources>

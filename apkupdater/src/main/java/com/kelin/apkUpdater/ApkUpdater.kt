@@ -11,6 +11,7 @@ import android.os.IBinder
 import androidx.annotation.StyleRes
 import android.text.TextUtils
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import com.kelin.apkUpdater.DownloadService.DownloadBinder
 import com.kelin.apkUpdater.UpdateHelper.clearDownloadFailedCount
 import com.kelin.apkUpdater.UpdateHelper.downloadFailedCountPlus
@@ -25,12 +26,10 @@ import com.kelin.apkUpdater.UpdateHelper.isForceUpdate
 import com.kelin.apkUpdater.UpdateHelper.putApkVersionCode2Sp
 import com.kelin.apkUpdater.UpdateHelper.removeOldApk
 import com.kelin.apkUpdater.callback.CompleteUpdateCallback
-import com.kelin.apkUpdater.callback.DialogEventCallback
 import com.kelin.apkUpdater.callback.DownloadProgressCallback
 import com.kelin.apkUpdater.callback.IUpdateCallback
-import com.kelin.apkUpdater.dialog.DefaultDialog
-import com.kelin.apkUpdater.dialog.DefaultDialog.DialogListener
-import com.kelin.apkUpdater.dialog.DialogParams
+import com.kelin.apkUpdater.dialog.ApkUpdateDialog
+import com.kelin.apkUpdater.dialog.DefaultUpdateDialog
 import com.kelin.apkUpdater.util.NetWorkStateUtil
 import com.kelin.apkUpdater.util.NetWorkStateUtil.ConnectivityChangeReceiver
 import com.kelin.okpermission.OkPermission
@@ -47,36 +46,11 @@ import java.util.*
 class ApkUpdater private constructor(
         private var notifyCationTitle: CharSequence?,
         private var notifyCationDesc: CharSequence?,
-        private val checkWiFiState: Boolean,
-        noDialog: Boolean,
-        private var mCallback: IUpdateCallback?,
-        private val informDialogConfig: DialogParams,
-        private val loadDialogConfig: DialogParams,
-        private val dialogCallback: DialogEventCallback?
+        private val dialogGenerator: ((updater: ApkUpdater) -> ApkUpdateDialog)?,
+        private var mCallback: IUpdateCallback?
 ) {
 
     companion object {
-        /**
-         * 表示当前的状态是检查更新。
-         */
-        const val STATE_CHECK_UPDATE = 0x00000010
-        /**
-         * 表示当前的状态是无网络。
-         */
-        const val STATE_NETWORK_UNUSABLE = 0x00000011
-        /**
-         * 表示当前的状态是无WiFi。
-         */
-        const val STATE_WIFI_UNUSABLE = 0x00000012
-        /**
-         * 表示当前的状态是下载中。
-         */
-        const val STATE_DOWNLOAD = 0x00000013
-        /**
-         * 表示当前状态是校验MD5失败。
-         */
-        const val STATE_CHECK_MD5_FAILED = 0x00000014
-
         fun init(context: Context) {
             ActivityStackManager.initUpdater(context)
         }
@@ -84,25 +58,28 @@ class ApkUpdater private constructor(
 
     private var isBindService = false
     private var mServiceIntent: Intent? = null
-    private var mDefaultDialog: DefaultDialog? = null
     private var mIsLoaded = false
     private var mUpdateInfo: UpdateInfo? = null
     private var mHaveNewVersion = false
     private var mIsChecked = false
     private var mAutoInstall = true
     private val mNetWorkStateChangedReceiver by lazy { NetWorkStateChangedReceiver() }
-    private var mOnProgressListener: OnLoadProgressListener? = null
-    private var mIsProgressDialogHidden = false
-    private val mDialogListener = DefaultDialogListener()
     private val mApplicationContext: Context = ActivityStackManager.applicationContext
     private var mIsAutoCheck = false
 
-    init {
-        if (!noDialog) {
-            mDefaultDialog = DefaultDialog()
-        }
+    private val dialog: ApkUpdateDialog by lazy {
+        dialogGenerator?.invoke(this) ?: DefaultUpdateDialog(this)
     }
 
+    /**
+     * 更新的进度监听。
+     */
+    private val mOnProgressListener by lazy { OnLoadProgressListener() }
+    /**
+     * 获取一个不为空的UpdateInfo，如果为空则抛出异常。
+     */
+    private val requireUpdateInfo: UpdateInfo
+        get() = mUpdateInfo ?: throw NullPointerException("The UpdateInfo must not be null!")
     /**
      * 当前的版本名称。
      */
@@ -124,10 +101,6 @@ class ApkUpdater private constructor(
             override fun onServiceConnected(name: ComponentName, service: IBinder) {
                 val binder = service as DownloadBinder
                 val downloadService = binder.service
-                //接口回调，下载进度
-                if (mOnProgressListener == null) {
-                    mOnProgressListener = OnLoadProgressListener()
-                }
                 downloadService.setOnProgressListener(mOnProgressListener)
                 downloadService.setServiceUnBindListener { isBindService = false }
             }
@@ -143,15 +116,6 @@ class ApkUpdater private constructor(
         mCallback = null
     }
 
-    /**
-     * 静默下载。
-     */
-    fun silentDownload() {
-        if (mCallback != null) {
-            mCallback!!.onSilentDownload(this)
-        }
-    }
-
     private fun registerNetWorkReceiver() {
         if (!mNetWorkStateChangedReceiver.isRegister) {
             NetWorkStateUtil.registerReceiver(mApplicationContext, mNetWorkStateChangedReceiver)
@@ -160,22 +124,6 @@ class ApkUpdater private constructor(
 
     private fun unregisterNetWorkReceiver() {
         NetWorkStateUtil.unregisterReceiver(mApplicationContext, mNetWorkStateChangedReceiver)
-    }
-
-    /**
-     * 显示进度条对话框。
-     */
-    private fun showProgressDialog() {
-        if (mDefaultDialog != null) {
-            mDefaultDialog!!.show(loadDialogConfig, mDialogListener.changeState(STATE_DOWNLOAD))
-        } else {
-            if (dialogCallback != null) {
-                mDefaultDialog!!.dismissAll()
-                dialogCallback.onShowProgressDialog(this, isForceUpdate)
-            } else {
-                throw IllegalArgumentException("you mast call ApkUpdater's \"setCallback(CompleteUpdateCallback callback)\" Method。")
-            }
-        }
     }
 
     private fun stopService() { //判断是否真的下载完成进行安装了，以及是否注册绑定过服务
@@ -198,69 +146,54 @@ class ApkUpdater private constructor(
         require(!(!autoInstall && mCallback == null)) { "Because you neither set up to monitor installed automatically, so the check update is pointless." }
         val haveNewVersion = updateInfo.versionCode > localVersionCode
         if (!haveNewVersion) {
-            if (mCallback != null) {
-                mCallback!!.onSuccess(autoCheck, false, localVersionName, false)
-                mCallback!!.onCompleted()
+            mCallback?.apply {
+                onSuccess(autoCheck, false, localVersionName, false)
+                onCompleted()
             }
-            return
-        }
-        if (!NetWorkStateUtil.isConnected(mApplicationContext)) {
-            if (mCallback != null) {
-                mCallback!!.onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, isForceUpdate)
-                mCallback!!.onCompleted()
-            }
-            return
-        }
-        if (mUpdateInfo !== updateInfo) {
-            mIsAutoCheck = autoCheck
-            if (TextUtils.isEmpty(updateInfo.downLoadsUrl)) {
-                if (mCallback != null) {
-                    if (completeUpdateCallback != null) {
-                        completeUpdateCallback!!.onDownloadFailed()
-                    }
-                    mCallback!!.onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, isForceUpdate)
-                    mCallback!!.onCompleted()
-                }
-                return
-            }
-            mHaveNewVersion = true
-            mAutoInstall = autoInstall
-            mIsChecked = true
+        } else if (mUpdateInfo != updateInfo) {
             mUpdateInfo = updateInfo
-            loadDialogConfig.isForceUpdate = isForceUpdate
-            informDialogConfig.message = updateInfo.updateMessage
-            //如果这个条件满足说明上一次没有安装。有因为即使上一次没有安装最新的版本也有可能超出了上一次下载的版本，所以要在这里判断。
-            val apkPath = getApkPathFromSp(mApplicationContext)
-            if (getApkVersionCodeFromSp(mApplicationContext) == updateInfo.versionCode && getApkPathFromSp(mApplicationContext).endsWith(".apk", true) && File(apkPath).exists()) {
-                mIsLoaded = true
+            mIsAutoCheck = autoCheck
+            if (!NetWorkStateUtil.isConnected(mApplicationContext)) {
+                if (mCallback != null) {
+                    AlertDialog.Builder(ActivityStackManager.requireStackTopActivity())
+                            .setCancelable(false)
+                            .setTitle("提示：")
+                            .setMessage("网络不可用，请尝试切换您的网络环境后再试~")
+                            .setNegativeButton("确定") { dialog, which ->
+                                dialog.dismiss()
+                                mCallback?.apply {
+                                    onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, isForceUpdate)
+                                    onCompleted()
+                                }
+                            }.create().show()
+
+                }
+            } else if (TextUtils.isEmpty(updateInfo.downLoadsUrl)) {
+                mCallback?.also {
+                    (it as? CompleteUpdateCallback)?.onDownloadFailed()
+                    it.onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, isForceUpdate)
+                    it.onCompleted()
+                }
             } else {
-                removeOldApk(mApplicationContext)
+                mHaveNewVersion = true
+                mAutoInstall = autoInstall
+                mIsChecked = true
+                //如果这个条件满足说明上一次没有安装。有因为即使上一次没有安装最新的版本也有可能超出了上一次下载的版本，所以要在这里判断。
+                val apkPath = getApkPathFromSp(mApplicationContext)
+                if (getApkVersionCodeFromSp(mApplicationContext) == updateInfo.versionCode && getApkPathFromSp(mApplicationContext).endsWith(".apk", true) && File(apkPath).exists()) {
+                    mIsLoaded = true
+                } else {
+                    removeOldApk(mApplicationContext)
+                }
+                onShowUpdateInformDialog()
             }
-            onShowUpdateInformDialog()
         }
     }
 
     private fun onShowUpdateInformDialog() {
-        if (mDefaultDialog != null) {
-            informDialogConfig.isForceUpdate = isForceUpdate
-            showUpdateInformDialog()
-        } else {
-            if (dialogCallback != null) {
-                dialogCallback.onShowCheckHintDialog(this@ApkUpdater, mUpdateInfo!!, isForceUpdate)
-            } else {
-                throw IllegalArgumentException("you mast call ApkUpdater's \"setCallback(CompleteUpdateCallback callback)\" Method。")
-            }
+        requireUpdateInfo.also {
+            dialog.show(ActivityStackManager.requireStackTopActivity(), it.versionName, it.updateMessageTitle, it.updateMessage, isForceUpdate)
         }
-    }
-
-    private val completeUpdateCallback: CompleteUpdateCallback?
-        get() = if (mCallback is CompleteUpdateCallback) mCallback as CompleteUpdateCallback? else null
-
-    /**
-     * 显示更新提醒。
-     */
-    private fun showUpdateInformDialog() {
-        mDefaultDialog!!.show(informDialogConfig, mDialogListener.changeState(STATE_CHECK_UPDATE))
     }
 
     /**
@@ -269,7 +202,7 @@ class ApkUpdater private constructor(
      * @param isContinue 是否继续，如果继续则说明统一更新，否则就是不统一更新。
      */
     fun setCheckHandlerResult(isContinue: Boolean) {
-        check(!(mDefaultDialog != null || !mIsChecked)) {
+        check(!(dialog !is DefaultUpdateDialog || !mIsChecked)) {
             //如果不是自定义UI交互或没有使用API提供的check方法检测更新的话不允许调用该方法。
             "Because of your dialog is not custom, so you can't call the method."
         }
@@ -295,21 +228,15 @@ class ApkUpdater private constructor(
                 }
             }
         } else {
-            if (mCallback != null) {
-                if (completeUpdateCallback != null) {
-                    completeUpdateCallback!!.onDownloadCancelled()
-                }
-                mCallback!!.onFiled(mIsAutoCheck, true, mHaveNewVersion, localVersionName, 0, isForceUpdate)
-                mCallback!!.onCompleted()
+            mCallback?.apply {
+                (this as? CompleteUpdateCallback)?.onDownloadCancelled()
+                onFiled(mIsAutoCheck, true, mHaveNewVersion, localVersionName, 0, isForceUpdate)
+                onCompleted()
             }
         }
     }
 
     private fun handlerDownloadSuccess(apkFile: File) {
-        if (dialogCallback != null) {
-            val length = apkFile.length()
-            dialogCallback.onProgress(this@ApkUpdater, length, length, 100)
-        }
         if (mAutoInstall) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 OkPermission.with(ActivityStackManager.requireStackTopActivity())
@@ -318,11 +245,10 @@ class ApkUpdater private constructor(
                             if (granted) {
                                 onInstallApk(apkFile)
                             } else {
-                                val completeUpdateCallback = completeUpdateCallback
-                                completeUpdateCallback?.onDownloadSuccess(apkFile, true)
-                                if (mCallback != null) {
-                                    mCallback!!.onFiled(mIsAutoCheck, isCanceled = true, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, isForceUpdate = isForceUpdate)
-                                    mCallback!!.onCompleted()
+                                mCallback?.apply {
+                                    (this as? CompleteUpdateCallback)?.onDownloadSuccess(apkFile, true)
+                                    onFiled(mIsAutoCheck, isCanceled = true, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, isForceUpdate = isForceUpdate)
+                                    onCompleted()
                                 }
                             }
                         }
@@ -330,30 +256,28 @@ class ApkUpdater private constructor(
                 onInstallApk(apkFile)
             }
         } else {
-            val completeUpdateCallback = completeUpdateCallback
-            completeUpdateCallback?.onDownloadSuccess(apkFile, true)
-            if (mCallback != null) {
-                mCallback!!.onSuccess(mIsAutoCheck, true, localVersionName, isForceUpdate)
-                mCallback!!.onCompleted()
+            mCallback?.apply {
+                (this as? CompleteUpdateCallback)?.onDownloadSuccess(apkFile, true)
+                onSuccess(mIsAutoCheck, true, localVersionName, isForceUpdate)
+                onCompleted()
             }
         }
     }
 
     private fun onInstallApk(apkFile: File?) {
-        val completeUpdateCallback = completeUpdateCallback
         val installApk = installApk(mApplicationContext, apkFile)
         if (!installApk) {
-            completeUpdateCallback?.onInstallFailed()
-            if (mCallback != null) {
-                mCallback!!.onFiled(mIsAutoCheck, isCanceled = false, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, isForceUpdate = isForceUpdate)
-                mCallback!!.onCompleted()
+            mCallback?.apply {
+                (this as? CompleteUpdateCallback)?.onInstallFailed()
+                onFiled(mIsAutoCheck, isCanceled = false, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, isForceUpdate = isForceUpdate)
+                onCompleted()
             }
         } //如果installApk为true则不需要回调了，因为安装成功必定会杀死进程。杀掉进程后回调已经没有意义了。
     }
 
     private fun checkCanDownloadable(): Boolean {
         registerNetWorkReceiver() //注册一个网络状态改变的广播接收者。无论网络是否连接成功都要注册，因为下载过程中可能会断网。
-        if (!NetWorkStateUtil.isConnected(mApplicationContext) || checkWiFiState && !NetWorkStateUtil.isWifiConnected(mApplicationContext)) {
+        if (!NetWorkStateUtil.isConnected(mApplicationContext) && !NetWorkStateUtil.isWifiConnected(mApplicationContext)) {
             showWifiOrMobileUnusableDialog()
             return false
         }
@@ -361,41 +285,37 @@ class ApkUpdater private constructor(
     }
 
     private fun showWifiOrMobileUnusableDialog() {
-        if (NetWorkStateUtil.isConnected(mApplicationContext)) {
-            showWiFiUnusableDialog()
-        } else {
-            showNetWorkUnusableDialog()
-        }
-    }
-
-    private fun showNetWorkUnusableDialog() {
-        mDefaultDialog!!.showNetWorkUnusableDialog(mDialogListener.changeState(STATE_NETWORK_UNUSABLE))
-    }
-
-    private fun showWiFiUnusableDialog() {
-        mDefaultDialog!!.showWiFiUnusableDialog(mDialogListener.changeState(STATE_WIFI_UNUSABLE))
+        AlertDialog.Builder(ActivityStackManager.requireStackTopActivity())
+                .setCancelable(false)
+                .setTitle("提示：")
+                .setMessage("网络连接已经断开，请稍后再试。")
+                .setNegativeButton("确定") { dialog, which ->
+                    if (isBindService) {
+                        (mCallback as? CompleteUpdateCallback)?.onDownloadPending()
+                    } else {
+                        mCallback?.apply {
+                            onFiled(mIsAutoCheck, false, mHaveNewVersion, localVersionName, 0, isForceUpdate)
+                            onCompleted()
+                        }
+                    }
+                }
+                .create()
     }
 
     private fun getApkName(updateInfo: UpdateInfo): String? {
         val apkName = updateInfo.apkName
-        return if (TextUtils.isEmpty(apkName)) {
+        return if (apkName.isNullOrEmpty()) {
             defaultApkName
         } else {
-            if (apkName!!.toLowerCase().endsWith(".apk")) apkName else "$apkName.apk"
+            if (apkName.endsWith(".apk")) apkName else "$apkName.apk"
         }
     }
-    /**
-     * 开始下载。
-     *
-     * @param updateInfo  更新信息对象。
-     * @param autoInstall 是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
-     */
+
     /**
      * 开始下载。
      *
      * @param updateInfo 更新信息对象。
      */
-    @JvmOverloads
     fun download(updateInfo: UpdateInfo, autoInstall: Boolean = true) {
         download(updateInfo, null, null, autoInstall)
     }
@@ -421,7 +341,6 @@ class ApkUpdater private constructor(
         this.notifyCationDesc = notifyCationDesc
         mAutoInstall = autoInstall
         mUpdateInfo = updateInfo
-        loadDialogConfig.isForceUpdate = isForceUpdate
         if (checkCanDownloadable()) {
             startDownload()
         }
@@ -454,29 +373,23 @@ class ApkUpdater private constructor(
         }
 
     class Builder {
-        val informDialogConfig = DialogParams.informDialogParams
-        val loadDialogConfig = DialogParams.downloadDialogParams
         /**
          * 用来配置下载的监听回调对象。
          */
-        var callback: IUpdateCallback? = null
+        private var callback: IUpdateCallback? = null
         /**
          * 通知栏的标题。
          */
-        var mTitle: CharSequence? = null
+        private var mTitle: CharSequence? = null
         /**
          * 通知栏的描述。
          */
-        var mDescription: CharSequence? = null
+        private var mDescription: CharSequence? = null
         /**
-         * 是否没有对话框。
+         * 自定义弹窗。
          */
-        var noDialog = false
-        /**
-         * 是否检测WiFi链接状态。
-         */
-        var checkWiFiState = true
-        var dialogCallback: DialogEventCallback? = null
+        private var customDialogGenerator: ((updater: ApkUpdater) -> ApkUpdateDialog)? = null
+
         /**
          * 设置监听对象。
          *
@@ -487,48 +400,6 @@ class ApkUpdater private constructor(
             return this
         }
 
-        /**
-         * 设置Dialog的样式。
-         *
-         * @param style 要设置的样式的资源ID。
-         */
-        fun setDialogTheme(@StyleRes style: Int): Builder {
-            DialogParams.style = style
-            return this
-        }
-
-        /**
-         * 配置检查更新时对话框的标题。
-         *
-         * @param title 对话框的标题。
-         */
-        fun setCheckDialogTitle(title: CharSequence?): Builder {
-            informDialogConfig.title = title
-            return this
-        }
-
-        /**
-         * 配置下载更新时对话框的标题。
-         *
-         * @param title 对话框的标题。
-         */
-        fun setDownloadDialogTitle(title: CharSequence?): Builder {
-            loadDialogConfig.title = title
-            if (mTitle == null) {
-                mTitle = title
-            }
-            return this
-        }
-
-        /**
-         * 配置下载更新时对话框的消息。
-         *
-         * @param message 对话框的消息。
-         */
-        fun setDownloadDialogMessage(message: String?): Builder {
-            loadDialogConfig.message = message
-            return this
-        }
 
         /**
          * 设置通知栏的标题。
@@ -551,20 +422,8 @@ class ApkUpdater private constructor(
          * 如果你关闭了默认的对话框的话就必须自己实现UI交互，并且在用户更新提示做出反应的时候调用
          * [ApkUpdater.setCheckHandlerResult] 方法。
          */
-        fun setNoDialog(callback: DialogEventCallback): Builder {
-            noDialog = true
-            dialogCallback = callback
-            return this
-        }
-
-        /**
-         * 设置不检查WiFi状态，默认是检查WiFi状态的，也就是说如果在下载更新的时候如果没有链接WiFi的话默认是会提示用户的。
-         * 但是如果你不希望给予提示，就可以通过调用此方法，禁用WiFi检查。
-         *
-         * @param check 是否检测WiFi连接状态，true表示检测，false表示不检测。默认检测。
-         */
-        fun setCheckWiFiState(check: Boolean): Builder {
-            checkWiFiState = check
+        fun setDialogGenerator(generator: (updater: ApkUpdater) -> ApkUpdateDialog): Builder {
+            customDialogGenerator = generator
             return this
         }
 
@@ -577,12 +436,8 @@ class ApkUpdater private constructor(
             return ApkUpdater(
                     mTitle,
                     mDescription,
-                    checkWiFiState,
-                    noDialog,
-                    callback,
-                    informDialogConfig,
-                    loadDialogConfig,
-                    dialogCallback
+                    customDialogGenerator,
+                    callback
             )
         }
 
@@ -596,7 +451,7 @@ class ApkUpdater private constructor(
          * 的是WiFi，如果为 [ConnectivityManager.TYPE_MOBILE] 则说明当前断开链接的是流量。
          */
         override fun onDisconnected(type: Int) {
-            showNetWorkUnusableDialog()
+            showWifiOrMobileUnusableDialog()
         }
 
         /**
@@ -607,20 +462,10 @@ class ApkUpdater private constructor(
          */
         override fun onConnected(type: Int) {
             when (type) {
-                ConnectivityManager.TYPE_MOBILE -> if (isBindService) {
-                    if (!mIsProgressDialogHidden) {
-                        showProgressDialog()
-                    }
-                } else {
-                    if (checkWiFiState) {
-                        showWiFiUnusableDialog()
-                    } else {
-                        startDownload()
-                    }
+                ConnectivityManager.TYPE_MOBILE -> if (!isBindService) {
+                    startDownload()
                 }
-                ConnectivityManager.TYPE_WIFI -> if (isBindService) {
-                    showProgressDialog()
-                } else {
+                ConnectivityManager.TYPE_WIFI -> if (!isBindService) {
                     startDownload()
                 }
             }
@@ -650,28 +495,31 @@ class ApkUpdater private constructor(
 
     private inner class OnLoadProgressListener : DownloadProgressCallback {
         override fun onStartDownLoad() {
-            if (completeUpdateCallback != null) {
-                completeUpdateCallback!!.onStartDownLoad()
-            }
-            showProgressDialog()
+            (mCallback as? CompleteUpdateCallback)?.onStartDownLoad()
         }
 
         override fun onProgress(total: Long, current: Long, percentage: Int) {
             if (percentage == 100 || total == current) {
                 putApkVersionCode2Sp(mApplicationContext, mUpdateInfo!!.versionCode)
             }
-            if (completeUpdateCallback != null) {
-                completeUpdateCallback!!.onProgress(total, current, percentage)
-            }
-            dialogCallback?.onProgress(this@ApkUpdater, total, current, percentage)
-            mDefaultDialog?.updateDownLoadsProgress(percentage)
+            (mCallback as? CompleteUpdateCallback)?.onProgress(total, current, percentage)
+            dialog.onProgress(total, current, percentage)
         }
 
         override fun onLoadSuccess(apkFile: File, isCache: Boolean) {
             if (!checkFileSignature(apkFile)) {
                 removeOldApk(mApplicationContext)
                 downloadFailedCountPlus(mApplicationContext)
-                mDefaultDialog!!.showCheckMD5FailedDialog(mDialogListener.changeState(STATE_CHECK_MD5_FAILED))
+                dialog.dismiss()
+                AlertDialog.Builder(ActivityStackManager.requireStackTopActivity())
+                        .setCancelable(false)
+                        .setTitle("提示：")
+                        .setMessage("下载失败，请尝试切换您的网络环境后再试~")
+                        .setNegativeButton("确定") { dialog, which ->
+                            dialog.dismiss()
+                            mOnProgressListener.onLoadFailed()
+                        }
+                        .create().show()
             } else {
                 clearDownloadFailedCount(mApplicationContext)
                 unregisterNetWorkReceiver()
@@ -683,78 +531,20 @@ class ApkUpdater private constructor(
         override fun onLoadFailed() {
             unregisterNetWorkReceiver()
             stopService() //结束服务
-            mDefaultDialog!!.dismissAll()
-            if (mCallback != null) {
-                if (completeUpdateCallback != null) {
-                    completeUpdateCallback!!.onDownloadFailed()
-                }
-                mCallback!!.onFiled(mIsAutoCheck, false, mHaveNewVersion, localVersionName, getDownloadFailedCount(mApplicationContext), isForceUpdate)
-                mCallback!!.onCompleted()
-            } else {
-                Toast.makeText(mApplicationContext, "sorry, 下载失败了~", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+            mCallback?.apply {
+                (this as? CompleteUpdateCallback)?.onDownloadFailed()
+                onFiled(mIsAutoCheck, false, mHaveNewVersion, localVersionName, getDownloadFailedCount(mApplicationContext), isForceUpdate)
+                onCompleted()
             }
         }
 
         override fun onLoadPaused() {
-            if (completeUpdateCallback != null) {
-                completeUpdateCallback!!.onDownloadPaused()
-            }
+            (mCallback as? CompleteUpdateCallback)?.onDownloadPaused()
         }
 
         override fun onLoadPending() {
-            if (completeUpdateCallback != null) {
-                completeUpdateCallback!!.onDownloadPending()
-            }
-        }
-    }
-
-    private inner class DefaultDialogListener : DialogListener {
-        private var mCurrentState = 0
-        /**
-         * 改变状态。
-         *
-         * @param currentState 要改变新状态。
-         * @return 返回 DefaultDialogListener 本身。
-         */
-        fun changeState(currentState: Int): DefaultDialogListener {
-            mCurrentState = currentState
-            return this
-        }
-
-        override fun onDialogDismiss(isSure: Boolean) {
-            val callback = completeUpdateCallback
-            when (mCurrentState) {
-                Companion.STATE_CHECK_UPDATE -> respondCheckHandlerResult(isSure)
-                Companion.STATE_NETWORK_UNUSABLE -> if (mCallback != null) {
-                    if (isBindService) {
-                        callback?.onDownloadPending()
-                    } else {
-                        mCallback!!.onFiled(mIsAutoCheck, false, mHaveNewVersion, localVersionName, 0, isForceUpdate)
-                        mCallback!!.onCompleted()
-                    }
-                }
-                Companion.STATE_WIFI_UNUSABLE -> if (isSure) {
-                    startDownload()
-                } else {
-                    if (mCallback != null) {
-                        callback?.onDownloadCancelled()
-                        mCallback!!.onFiled(mIsAutoCheck, true, mHaveNewVersion, localVersionName, 0, isForceUpdate)
-                        mCallback!!.onCompleted()
-                    }
-                }
-                Companion.STATE_DOWNLOAD -> {
-                    mIsProgressDialogHidden = true
-                    silentDownload()
-                }
-                Companion.STATE_CHECK_MD5_FAILED -> if (isForceUpdate) {
-                    unregisterNetWorkReceiver()
-                    stopService() //结束服务
-                    mDefaultDialog!!.dismissAll()
-                    onShowUpdateInformDialog()
-                } else {
-                    mOnProgressListener!!.onLoadFailed()
-                }
-            }
+            (mCallback as? CompleteUpdateCallback)?.onDownloadPending()
         }
     }
 }
