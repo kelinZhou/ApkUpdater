@@ -15,7 +15,7 @@ class App : Application() {
         if (!LeakCanary.isInAnalyzerProcess(this)) {
             LeakCanary.install(this)
         }
-        ApkUpdater.init(this)
+        ApkUpdater.init(this, "$packageName.fileProvider")
         super.onCreate()
     }
 }

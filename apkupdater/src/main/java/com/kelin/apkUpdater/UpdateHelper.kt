@@ -119,7 +119,7 @@ object UpdateHelper {
         // 判断版本大于等于7.0
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) { // 给目标应用一个临时授权
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            val uri = FileProvider.getUriForFile(context, context.applicationContext.packageName + ".fileProvider", apkFile)
+            val uri = FileProvider.getUriForFile(context, ApkUpdater.fileProvider, apkFile)
             intent.setDataAndType(uri, context.contentResolver.getType(uri))
             val resInfoList = context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
             for (resolveInfo in resInfoList) {

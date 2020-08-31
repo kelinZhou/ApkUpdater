@@ -7,30 +7,22 @@ package com.kelin.apkUpdater
  */
 interface UpdateInfo {
     /**
-     * 获取网络上的版本号。
-     *
-     * @return 返回当前对象的版本号字段的值。
+     * 网络上的版本号。
      */
     val versionCode: Int
 
     /**
-     * 获取网络上的版本名称。
-     *
-     * @return 返回当前对象的版本名称字段的值。
+     * 网络上的版本名称。
      */
     val versionName: String?
 
     /**
-     * 获取最新版本的下载链接。
-     *
-     * @return 返回当前对象的下载链接字段的值。
+     * 最新版本 apk 的下载链接。
      */
     val downLoadsUrl: String?
 
     /**
-     * 是否强制更新。
-     *
-     * @return `true` 表示强制更新, `false` 则相反。
+     * 是否强制更新。`true` 表示强制更新, `false` 则相反。
      */
     val isForceUpdate: Boolean
 
@@ -44,34 +36,22 @@ interface UpdateInfo {
     val forceUpdateVersionCodes: IntArray?
 
     /**
-     * 获取Apk文件名(例如 xxx.apk 或 xxx)。后缀名不是必须的。
-     * 可以返回null，如果返回null则默认使用日期作为文件名。
-     */
-    val apkName: String?
-
-    /**
      * 更新标题，例如"更新以下内容"，用于显示在弹窗中。
      */
     val updateMessageTitle: CharSequence?
 
     /**
-     * 获取更新的内容。就是你本次更新了那些东西可以在这里返回，这里返回的内容会现在是Dialog的消息中，如果你没有禁用Dialog的话。
-     *
-     * @return 返回你本次更新的内容。
+     * 获取更新的内容。就是你本次更新了那些东西可以在这里返回，用于显示在弹窗中。
      */
     val updateMessage: CharSequence?
 
     /**
-     * 文件签名类型。
-     *
-     * @return 返回你能够提供的文件签名类型，例如MD5或者SHA1.
+     * 服务端可提供的文件签名类型，目前只支持MD5或SHA1。用于Apk完整性校验，防止下载的过程中丢包或Apk遭到恶意串改。
      */
     val signatureType: SignatureType?
 
     /**
-     * 获取网络上最新安装包的签名，用户校验下载后的安装包是否完整以及是否修改等。
-     *
-     * @return 如果你希望使用签名校验则返回网络上最近安装包的签名，如果返回null这表示不进行签名校验，签名可以是MD5或者SHA1。
+     * 服务端提供的文件签名，目前只支持MD5或SHA1。用于Apk完整性校验，防止下载的过程中丢包或Apk遭到恶意串改。
      */
     val signature: String?
 }
