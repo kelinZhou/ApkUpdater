@@ -1,6 +1,5 @@
 package com.kelin.updatemanagerdemo
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -8,28 +7,24 @@ import android.view.View
 import android.widget.Toast
 import com.kelin.apkUpdater.ApkUpdater
 import com.kelin.apkUpdater.SignatureType
-import com.kelin.apkUpdater.SimpleUpdateInfo
+import com.kelin.apkUpdater.UpdateInfoImpl
 import com.kelin.apkUpdater.callback.IUpdateCallback
-import com.kelin.apkUpdater.dialog.ApkUpdateDialog
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
     private val apkUpdater: ApkUpdater by lazy {
-        ApkUpdater.Builder()
-                .setDialogGenerator {
-                    MyUpdateDialog(it)
-                }.create()
+        ApkUpdater.Builder().create()
     }
 
     private val updateInfo by lazy {
-        SimpleUpdateInfo(
-                "http://test-cloud-yxholding-com.oss-cn-shanghai.aliyuncs.com/yx-logistics/file/file/20200703/1593709201374.apk",
-                131,
-                "v1.3.1",
-                false,
-                "更新内容如下：",
-                "1.修复了极端情况下可能导致下单失败的bug。\n2.增加了许多新的玩法，并且增加了app的稳定性。 \n3.这是测试内容，其实什么都没有更新。",
-                SignatureType.MD5,
-                ""
+        UpdateInfoImpl(
+                "http://test-cloud-yxholding-com.oss-cn-shanghai.aliyuncs.com/yx-logistics/file/file/20200703/1593709201374.apk", //安装包下载地址
+                131, //网络上的版本号，用于判断是否可以更新(是否大于本地版本号)。
+                "v1.3.1", //版本名称，用于显示在弹窗中，以告知用户将要更到哪个版本。
+                false,  //是否是强制更新，如果干参数为true则用户没有进行更新就不能继续使用App。(当旧版本存在严重的Bug时或新功能不与旧版兼容时使用)
+                "更新内容如下：",  //升级弹窗的标题。
+                "1.修复了极端情况下可能导致下单失败的bug。\n2.增加了许多新的玩法，并且增加了app的稳定性。 \n3.这是测试内容，其实什么都没有更新。", //升级弹窗的消息内容，用于告知用户本次更新的内容。
+                SignatureType.MD5, //安装包完整性校验开启，并使用MD5进行校验，如果不想开启，传null。(目前只支持MD5和SHA1)
+                ""  //完成性校验的具体值，返回空或null则不会进行校验。
         )
     }
 
@@ -72,23 +67,5 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         override fun onCompleted() {
             Toast.makeText(applicationContext, "结束", Toast.LENGTH_SHORT).show()
         }
-    }
-}
-
-class MyUpdateDialog(apkUpdater: ApkUpdater) : ApkUpdateDialog {
-    override fun show(activity: Activity, version: String?, messageTitle: CharSequence?, message: CharSequence?, isForce: Boolean) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun onProgress(total: Long, current: Long, percentage: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun onNetworkError() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun dismiss() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

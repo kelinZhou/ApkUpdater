@@ -5,7 +5,7 @@ package com.kelin.apkUpdater
  * 创建人 kelin
  * 创建时间 2017/3/13  下午2:32
  */
-class SimpleUpdateInfo(
+class UpdateInfoImpl(
         /**
          * 最新版本的下载链接。
          */

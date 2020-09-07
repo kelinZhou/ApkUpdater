@@ -7,6 +7,14 @@
 
 ![demonstrate](materials/gif_apk_updater.gif)
 
+## 更新
+### 3.0.0 基于Kotlin和Androidx重构
+1. 基于Kotlin语言进行重构并迁移至Androidx。
+2. 优化升级弹窗的逻辑，使得自定义弹窗更加容易。
+
+### 2.2.3及以前
+基于Java、Support库开发，可自定义弹窗、支持完整性校验、自动缓存。
+
 ## 下载
 #### 第一步：添加 JitPack 仓库到你项目根目录的 gradle 文件中。
 ```groovy
@@ -25,7 +33,7 @@ dependencies {
 ```
 
 ## 使用
-#### 添加权限
+#### 第一步：添加权限
 你需要在你的清单文件中添加以下权限：
 ```html
     <!--网络访问权限-->
@@ -40,7 +48,7 @@ dependencies {
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 ```
 
-#### 清单文件配置
+#### 第二步：清单文件配置
 你需要在你清单文件中的**Application**节点下添加如下配置：
 ```html
 <!--Android7.0一上安装Apk所需要的文件提供者-->
@@ -80,7 +88,7 @@ provider标签中```android:authorities```的值可以自定义，需要在初�
     </base-config>
 </network-security-config>
 ```
-#### 初始化
+#### 第三步：初始化
 你需要在Application的onCreate方法中调用``` ApkUpdater.init(context, fileProvider) ```初始化ApkUpdater。例如:
 ```kotlin
 class App : Application() {
@@ -105,68 +113,30 @@ class App : Application() {
 </application>
 ```
 
-#### 获取更新信息
+#### 第五步：检测更新
 首先利用你项目的网络访问能力从服务器端获取更新信息并转换为**javaBean**对象，然后让这个对象实现**UpdateInfo**接口。下面是这个接口中所有方法：
 ```kotlin
-interface UpdateInfo {
-    /**
-     * 网络上的版本号。
-     */
-    val versionCode: Int
-
-    /**
-     * 网络上的版本名称。
-     */
-    val versionName: String?
-
-    /**
-     * 最新版本 apk 的下载链接。
-     */
-    val downLoadsUrl: String?
-
-    /**
-     * 是否强制更新。`true` 表示强制更新, `false` 则相反。
-     */
-    val isForceUpdate: Boolean
-
-    /**
-     * 获取强制更新的版本号，如果你的本次强制更新是针对某个或某些版本的话，你可以在该方法中返回。前提是 [.isForceUpdate]
-     * 返回值必须为true，否则该方法的返回值是没有意义的。
-     *
-     * @return 返回你要强制更新的版本号，可以返回 null ，如果返回 null 并且 [.isForceUpdate] 返回 true 的话
-     * 则表示所有版本全部强制更新。
-     */
-    val forceUpdateVersionCodes: IntArray?
-
-    /**
-     * 更新标题，例如"更新以下内容"，用于显示在弹窗中。
-     */
-    val updateMessageTitle: CharSequence?
-
-    /**
-     * 获取更新的内容。就是你本次更新了那些东西可以在这里返回，用于显示在弹窗中。
-     */
-    val updateMessage: CharSequence?
-
-    /**
-     * 服务端可提供的文件签名类型，目前只支持MD5或SHA1。用于Apk完整性校验，防止下载的过程中丢包或Apk遭到恶意串改。
-     */
-    val signatureType: SignatureType?
-
-    /**
-     * 服务端提供的文件签名，目前只支持MD5或SHA1。用于Apk完整性校验，防止下载的过程中丢包或Apk遭到恶意串改。
-     */
-    val signature: String?
-}
+ApkUpdater.Builder().create().check(
+    UpdateInfoImpl(
+            "http://test-cloud-yxholding-com.oss-cn-shanghai.aliyuncs.com/yx-logistics/file/file/20200703/1593709201374.apk", //安装包下载地址
+            131, //网络上的版本号，用于判断是否可以更新(是否大于本地版本号)。
+            "v1.3.1", //版本名称，用于显示在弹窗中，以告知用户将要更到哪个版本。
+            false,  //是否是强制更新，如果干参数为true则用户没有进行更新就不能继续使用App。(当旧版本存在严重的Bug时或新功能不与旧版兼容时使用)
+            "更新内容如下：",  //升级弹窗的标题。
+            "1.修复了极端情况下可能导致下单失败的bug。\n2.增加了许多新的玩法，并且增加了app的稳定性。 \n3.这是测试内容，其实什么都没有更新。", //升级弹窗的消息内容，用于告知用户本次更新的内容。
+            SignatureType.MD5, //安装包完整性校验开启，并使用MD5进行校验，如果不想开启，传null。(目前只支持MD5和SHA1)
+            ""  //完成性校验的具体值，返回空或null则不会进行校验。
+    )
+)
 ```
+## 其他
 #### 构建**Updater**对象
-这个对象是使用构造者模式创建的，可以配置Api提供的Dialog中的Icon、Title、Message以及NotifyCation的Title和Desc。
 
 |方法名|说明|
 |-----|------|
-|fun setCallback(callback: IUpdateCallback?): Builder|设置监听对象。|
-|fun setDialogGenerator(generator: (updater: ApkUpdater) -> ApkUpdateDialog): Builder|使用自定义弹窗。|
-|fun create(): ApkUpdater|完成**Updater**对象的构建。|
+|```setCallback(callback: IUpdateCallback?)```|设置监听对象。|
+|```setDialogGenerator(generator: (updater: ApkUpdater) -> ApkUpdateDialog)```|使用自定义弹窗。|
+|```create()```|完成**Updater**对象的构建。|
 #### 自定义Dialog
 ```kotlin
 ApkUpdater.Builder()
@@ -174,7 +144,7 @@ ApkUpdater.Builder()
             MyUpdateDialog(it)
         }.create()
 ```
-MyUpdateDialog 是ApkUpdateDialog接口的实现类。
+MyUpdateDialog 是ApkUpdateDialog接口的实现类。ApkUpdateDialog接口中都有注释，写的应该还算比较详细的，这里就不在讲了。
 #### 检查更新
 检查更新的代码如下：
 ```kotlin
