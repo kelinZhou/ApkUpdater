@@ -9,7 +9,7 @@
 
 ## 更新
 ### 3.0.0 基于Kotlin和Androidx重构
-1. 基于Kotlin语言进行重构并迁移至Androidx。
+1. 基于Kotlin语言进行重构并迁移至Androidx。没有迁移至Androidx的小伙伴请使用之前的版本。
 2. 优化升级弹窗的逻辑，使得自定义弹窗更加容易。
 
 ### 2.2.3及以前
