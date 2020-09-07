@@ -8,6 +8,9 @@
 ![demonstrate](materials/gif_apk_updater.gif)
 
 ## 更新
+### 3.0.1 将DefaultUpdateDialog改为open(可以被继承)。
+将DefaultUpdateDialog改为open(可以被继承)，这将使得自定义弹窗更加容易，你可以直接继承DefaultUpdateDialog来自定义你的弹窗。
+
 ### 3.0.0 基于Kotlin和Androidx重构
 1. 基于Kotlin语言进行重构并迁移至Androidx。没有迁移至Androidx的小伙伴请使用之前的版本。
 2. 优化升级弹窗的逻辑，使得自定义弹窗更加容易。
@@ -144,7 +147,7 @@ ApkUpdater.Builder()
             MyUpdateDialog(it)
         }.create()
 ```
-MyUpdateDialog 是ApkUpdateDialog接口的实现类。ApkUpdateDialog接口中都有注释，写的应该还算比较详细的，这里就不在讲了。
+MyUpdateDialog 是ApkUpdateDialog接口的实现类,也可以直接继承DefaultUpdateDialog。ApkUpdateDialog接口中都有注释，写的应该还算比较详细的，这里就不在讲了。
 #### 检查更新
 检查更新的代码如下：
 ```kotlin
