@@ -153,7 +153,7 @@ class ApkUpdater private constructor(
                 onSuccess(autoCheck, false, localVersionName, false)
                 onCompleted()
             }
-        } else if (mUpdateInfo != updateInfo) {
+        } else {
             mUpdateInfo = updateInfo
             mIsAutoCheck = autoCheck
             if (TextUtils.isEmpty(updateInfo.downLoadsUrl)) {

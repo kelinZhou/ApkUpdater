@@ -129,12 +129,6 @@ object UpdateHelper {
             intent.setDataAndType(Uri.fromFile(apkFile), getIntentType(apkFile))
         }
         context.startActivity(intent)
-        try {
-            Process.killProcess(Process.myPid())
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return false
-        }
         return true
     }
 
