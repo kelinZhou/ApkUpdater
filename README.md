@@ -12,7 +12,7 @@
 
 ## 更新
 ### 3.0.2 修复在OPPO手机上总是提示安装包已损坏的问题。
-在安装更新时OPPO手机总是提示包已损坏(其实并没有损坏)，主要是因为在startActivity之后调用了```Process.killProcess(Process.myPid())``这行代码所导致的。现已将这行代码删除。
+在安装更新时OPPO手机总是提示包已损坏(其实并没有损坏)，主要是因为在startActivity之后调用了```Process.killProcess(Process.myPid())```这行代码所导致的。现已将这行代码删除。
 
 ### 3.0.1 将DefaultUpdateDialog改为open(可以被继承)。
 将DefaultUpdateDialog改为open(可以被继承)，这将使得自定义弹窗更加容易，你可以直接继承DefaultUpdateDialog来自定义你的弹窗。
