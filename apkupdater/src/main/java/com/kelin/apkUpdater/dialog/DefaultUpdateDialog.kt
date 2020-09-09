@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.annotation.CallSuper
 import androidx.annotation.LayoutRes
 import androidx.annotation.StyleRes
@@ -111,6 +112,7 @@ open class DefaultUpdateDialog(protected val updater: ApkUpdater, @StyleRes priv
             setOnClickListener {
                 setOnClickListener(null)
                 if (!mIsForceUpdate) {
+                    Toast.makeText(context, "正在下载，请稍后……", Toast.LENGTH_SHORT).show()
                     dismiss()
                     onUpdateButtonClick()
                 } else {

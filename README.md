@@ -3,9 +3,10 @@
 
 
 ## 演示
-按照惯例还是先上图吧。从图片中你可以看出apk是做了缓存的，也就是下载完成后如果没有安装下次再次检查更新时如果发现服务端的版本和缓存的版本一致且MD5值一致则会跳过下载，直接安装。
-
-![demonstrate](materials/gif_apk_updater.gif)
+按照惯例还是先上图吧。
+![截图1](materials/demo_03.png)
+![截图2](materials/demo_01.png)
+![截图3](materials/demo_02.png)
 
 ## 更新
 ### 3.0.2 修复在OPPO手机上总是提示安装包已损坏的问题。
