@@ -5,9 +5,10 @@
 ## 演示
 按照惯例还是先上图吧。
 
-![截图1](materials/demo_03.png)
-![截图2](materials/demo_01.png)
-![截图3](materials/demo_02.png)
+![截图1](materials/demo_01.png)
+![截图2](materials/demo_02.png)
+![截图3](materials/demo_03.png)
+![截图4](materials/demo_04.png)
 
 ## 更新
 ### 3.0.2 修复在OPPO手机上总是提示安装包已损坏的问题。
