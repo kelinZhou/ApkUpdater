@@ -11,6 +11,8 @@
 ![截图4](materials/demo_04.png)
 
 ## 更新
+### 3.0.3 修复FragmentDialog在dismiss时可以引发崩溃的Bug。
+
 ### 3.0.2 修复在OPPO手机上总是提示安装包已损坏的问题。
 在安装更新时OPPO手机总是提示包已损坏(其实并没有损坏)，主要是因为在startActivity之后调用了```Process.killProcess(Process.myPid())```这行代码所导致的。现已将这行代码删除。
 

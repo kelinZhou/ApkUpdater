@@ -59,7 +59,11 @@ open class DefaultUpdateDialog(protected val updater: ApkUpdater, @StyleRes priv
 
     @CallSuper
     override fun dismiss() {
-        super.dismiss()
+        dismissAllowingStateLoss()
+    }
+
+    override fun dismissAllowingStateLoss() {
+        super.dismissAllowingStateLoss()
         mIsDismissed = true
     }
 
