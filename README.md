@@ -1,6 +1,4 @@
-[![](https://jitpack.io/v/kelinZhou/ApkUpdater.svg)](https://jitpack.io/#kelinZhou/ApkUpdater)
-
-# ApkUpdater
+# ApkUpdater  [![](https://jitpack.io/v/kelinZhou/ApkUpdater.svg)](https://jitpack.io/#kelinZhou/ApkUpdater)
 基于DownLoadManager实现安装包更新，安装包缓存，支持MD5校验，支持断点续传，自定义UI，提供了默认UI。
 
 
