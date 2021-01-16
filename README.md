@@ -11,6 +11,8 @@
 ![截图4](materials/demo_04.png)
 
 ## 更新
+### 3.0.4 修复Manifest merger时可能会出现label冲突的问题。
+
 ### 3.0.3 修复FragmentDialog在dismiss时可以引发崩溃的Bug。
 
 ### 3.0.2 修复在OPPO手机上总是提示安装包已损坏的问题。
