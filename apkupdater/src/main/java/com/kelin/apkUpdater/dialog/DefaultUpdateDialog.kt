@@ -83,7 +83,7 @@ open class DefaultUpdateDialog(protected val updater: ApkUpdater, @StyleRes priv
                 if (activity is FragmentActivity) {
                     onShow(activity)
                 } else {
-                    throw IllegalStateException("Only support Androidx!")
+                    throw IllegalStateException("Only support FragmentActivity!")
                 }
             }
         }
@@ -106,17 +106,17 @@ open class DefaultUpdateDialog(protected val updater: ApkUpdater, @StyleRes priv
     }
 
     protected open fun onInitView(isForceUpdate: Boolean, versionName: CharSequence?, messageTitle: CharSequence?, message: CharSequence?) {
-        ivKelinApkUpdaterUpdateDialogDismiss.visibility = if (isForceUpdate) View.GONE else View.VISIBLE
+        ivKelinApkUpdaterUpdateDialogDismiss.visibility = if (isForceUpdate) View.INVISIBLE else View.VISIBLE
         tvKelinApkUpdaterVersion.text = versionName
         tvKelinApkUpdaterTitle.text = messageTitle
         tvKelinApkUpdaterUpdateContent.text = message
 
         tvKelinApkUpdaterSure.apply {
-            text = "立即更新"
+            text = if (mIsForceUpdate) "立即更新" else "后台更新"
             setOnClickListener {
                 setOnClickListener(null)
                 if (!mIsForceUpdate) {
-                    Toast.makeText(context, "正在下载，请稍后……", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "正在后台下载，请稍后……", Toast.LENGTH_SHORT).show()
                     dismiss()
                     onUpdateButtonClick()
                 } else {
@@ -130,7 +130,7 @@ open class DefaultUpdateDialog(protected val updater: ApkUpdater, @StyleRes priv
             dismiss()
             updater.setCheckHandlerResult(false)
         }
-        pbKelinApkUpdaterProgress.progress = 0  //TODO 测试这里不用post有没有问题
+        pbKelinApkUpdaterProgress.progress = 0
     }
 
     protected open fun onUpdateButtonClick() {
