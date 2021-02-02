@@ -11,6 +11,15 @@
 ![截图4](materials/demo_04.png)
 
 ## 更新
+### 3.1.0 优化升级逻辑，增加弱更新功能。
+1. UpdateInfo接口移除了isForceUpdate的属性，改为updateType属性，其类型为```UpdateType```。```UpdateType```为枚举类型，共有以下3个类型：
+    * ```UpdateType.UPDATE_WEAK``` 弱更新，当更新类型为该类型时将会在默认的弹窗中出现`忽略此版本`的按钮，点击后默认会调用```ApkUpdater.skipThisVersion()```方法，
+    即表示直到下一个版本出现前不会再次自动提示。如果用户还想更新则可以通过手动更新的方式更新应用。设置手动更新的方式可参考```ApkUpdater.check()```方法。
+    * ```UpdateType.UPDATE_NORMAL```普通更新。
+    * ```UpdateType.UPDATE_FORCE```强制更新。
+2. DefaultUpdateDialog中的```onUpdateButtonClick()```方法名变更为```onUpgradingInTheBackground()```。
+3. 判断是否是强制更新的逻辑发生了变化，只要应用当前的版本号包含在UpdateInfo中的forceUpdateVersionCodes字段中就会认为是强制更新，及updateType为```UpdateType.UPDATE_FORCE```，而忽略updateType原来的值。
+
 ### 3.0.4 修复Manifest merger时可能会出现label冲突的问题。
 
 ### 3.0.3 修复FragmentDialog在dismiss时可以引发崩溃的Bug。

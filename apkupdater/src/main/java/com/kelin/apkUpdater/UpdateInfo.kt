@@ -22,9 +22,12 @@ interface UpdateInfo {
     val downLoadsUrl: String?
 
     /**
-     * 是否强制更新。`true` 表示强制更新, `false` 则相反。
+     * 更新类型。
+     * @see [UpdateType.UPDATE_WEAK]
+     * @see [UpdateType.UPDATE_NORMAL]
+     * @see [UpdateType.UPDATE_FORCE]
      */
-    val isForceUpdate: Boolean
+    val updateType: UpdateType
 
     /**
      * 获取强制更新的版本号，如果你的本次强制更新是针对某个或某些版本的话，你可以在该方法中返回。前提是 [.isForceUpdate]

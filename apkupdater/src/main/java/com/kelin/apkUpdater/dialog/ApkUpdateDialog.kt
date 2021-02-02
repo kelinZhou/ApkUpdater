@@ -2,6 +2,7 @@ package com.kelin.apkUpdater.dialog
 
 import android.app.Activity
 import com.kelin.apkUpdater.ApkUpdater
+import com.kelin.apkUpdater.UpdateType
 
 /**
  * **描述:** 安装包升级弹窗。
@@ -18,10 +19,14 @@ interface ApkUpdateDialog {
      * 在用户做出相应的操作后，你应当调用[ApkUpdater.setCheckHandlerResult]方法进行下一步的操作。
      *
      * @param activity 弹窗必须依赖于Activity。
-     * @param isForce 是否是强制更新。
+     * @param version 当前可更新的版本名称。
+     * @param updateTitle 更新标题。
+     * @param updateContent 更新内容。
+     * @param updateType 更新类型。
+     * @param isAutoCheck 是否是自动更新。
      * @see ApkUpdater.setCheckHandlerResult
      */
-    fun show(activity: Activity, version: String?, messageTitle: CharSequence?, message: CharSequence?, isForce: Boolean)
+    fun show(activity: Activity, version: String?, updateTitle: CharSequence?, updateContent: CharSequence?, updateType: UpdateType, isAutoCheck:Boolean)
 
 
     /**

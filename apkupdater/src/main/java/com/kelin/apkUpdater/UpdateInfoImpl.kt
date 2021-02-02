@@ -19,9 +19,12 @@ class UpdateInfoImpl(
          */
         override val versionName: String?,
         /**
-         * 是否是强制更新。
+         * 更新类型。
+         * @see [UpdateType.UPDATE_WEAK]
+         * @see [UpdateType.UPDATE_NORMAL]
+         * @see [UpdateType.UPDATE_FORCE]
          */
-        override val isForceUpdate: Boolean,
+        override val updateType: UpdateType,
         /**
          * 更新标题。
          */

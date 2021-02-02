@@ -14,6 +14,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import com.kelin.apkUpdater.ApkUpdater
 import com.kelin.apkUpdater.R
+import com.kelin.apkUpdater.UpdateType
 import kotlinx.android.synthetic.main.dialog_kelin_apk_updater_def_update.*
 
 /**
@@ -27,16 +28,23 @@ import kotlinx.android.synthetic.main.dialog_kelin_apk_updater_def_update.*
  */
 open class DefaultUpdateDialog(protected val updater: ApkUpdater, @StyleRes private val style: Int = R.style.KelinApkUpdaterUpdateDialog) : DialogFragment(), ApkUpdateDialog {
 
-    private var mIsForceUpdate = false
+    private var mUpdateType = UpdateType.UPDATE_WEAK
     private var mIsDismissed = false
     private var mVersionName: CharSequence? = null
-    private var mMessageTitle: CharSequence? = null
-    private var mMessage: CharSequence? = null
+    private var mUpdateTitle: CharSequence? = null
+    private var mUpdateContent: CharSequence? = null
+    private var mIsAutoCheck = false
     private var mHasNetworkErrorStatus = false
 
     init {
         isCancelable = false
     }
+
+    protected val isForce: Boolean
+        get() = mUpdateType == UpdateType.UPDATE_FORCE
+
+    protected val isWeak: Boolean
+        get() = mUpdateType == UpdateType.UPDATE_WEAK
 
     @get: LayoutRes
     protected open val contentLayoutRes: Int
@@ -50,7 +58,7 @@ open class DefaultUpdateDialog(protected val updater: ApkUpdater, @StyleRes priv
     @CallSuper
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        onInitView(mIsForceUpdate, mVersionName, mMessageTitle, mMessage)
+        onInitView(mVersionName, mUpdateTitle, mUpdateContent, mIsAutoCheck)
     }
 
     override fun getTheme(): Int {
@@ -68,12 +76,13 @@ open class DefaultUpdateDialog(protected val updater: ApkUpdater, @StyleRes priv
     }
 
     @CallSuper
-    override fun show(activity: Activity, version: String?, messageTitle: CharSequence?, message: CharSequence?, isForce: Boolean) {
+    override fun show(activity: Activity, version: String?, updateTitle: CharSequence?, updateContent: CharSequence?, updateType: UpdateType, isAutoCheck: Boolean) {
         mIsDismissed = false
-        mIsForceUpdate = isForce
+        mUpdateType = updateType
         mVersionName = version
-        this.mMessageTitle = messageTitle
-        this.mMessage = message
+        mUpdateTitle = updateTitle
+        mUpdateContent = updateContent
+        mIsAutoCheck = isAutoCheck
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             activity.isDestroyed
         } else {
@@ -91,34 +100,49 @@ open class DefaultUpdateDialog(protected val updater: ApkUpdater, @StyleRes priv
 
     @CallSuper
     override fun onNetworkError() {
-        mHasNetworkErrorStatus = true
-        onShowNetworkError()
+        if (!mIsDismissed) {
+            mHasNetworkErrorStatus = true
+            onShowNetworkStatusChanged(false)
+        }
     }
 
     final override fun onProgress(total: Long, current: Long, percentage: Int) {
         if (!mIsDismissed) {
             if (mHasNetworkErrorStatus) {
                 mHasNetworkErrorStatus = false
-                onShowNetWorkAvailable()
+                onShowNetworkStatusChanged(true)
             }
             onShowProgress(percentage)
         }
     }
 
-    protected open fun onInitView(isForceUpdate: Boolean, versionName: CharSequence?, messageTitle: CharSequence?, message: CharSequence?) {
-        ivKelinApkUpdaterUpdateDialogDismiss.visibility = if (isForceUpdate) View.INVISIBLE else View.VISIBLE
+    protected open fun onInitView(versionName: CharSequence?, updateTitle: CharSequence?, updateContent: CharSequence?, isAutoCheck: Boolean) {
+        tvKelinApkUpdaterSkipThisVersion.apply {
+            visibility = if (isWeak && isAutoCheck) View.VISIBLE else View.GONE
+            setOnClickListener {
+                dismiss()
+                updater.skipThisVersion()
+            }
+        }
+        ivKelinApkUpdaterUpdateDialogDismiss.apply {
+            visibility = if (isForce) View.INVISIBLE else View.VISIBLE
+            setOnClickListener {
+                dismiss()
+                updater.setCheckHandlerResult(false)
+            }
+        }
         tvKelinApkUpdaterVersion.text = versionName
-        tvKelinApkUpdaterTitle.text = messageTitle
-        tvKelinApkUpdaterUpdateContent.text = message
+        tvKelinApkUpdaterTitle.text = updateTitle
+        tvKelinApkUpdaterUpdateContent.text = updateContent
 
         tvKelinApkUpdaterSure.apply {
-            text = if (mIsForceUpdate) "立即更新" else "后台更新"
+            text = if (isForce) "立即更新" else "后台更新"
             setOnClickListener {
                 setOnClickListener(null)
-                if (!mIsForceUpdate) {
+                if (!isForce) {
                     Toast.makeText(context, "正在后台下载，请稍后……", Toast.LENGTH_SHORT).show()
                     dismiss()
-                    onUpdateButtonClick()
+                    onUpgradingInTheBackground()
                 } else {
                     text = "正在下载..."
                 }
@@ -126,14 +150,13 @@ open class DefaultUpdateDialog(protected val updater: ApkUpdater, @StyleRes priv
             }
         }
 
-        ivKelinApkUpdaterUpdateDialogDismiss.setOnClickListener {
-            dismiss()
-            updater.setCheckHandlerResult(false)
-        }
         pbKelinApkUpdaterProgress.progress = 0
     }
 
-    protected open fun onUpdateButtonClick() {
+    /**
+     * 当后台更新时调用。
+     */
+    protected open fun onUpgradingInTheBackground() {
 
     }
 
@@ -141,12 +164,8 @@ open class DefaultUpdateDialog(protected val updater: ApkUpdater, @StyleRes priv
         show(activity.supportFragmentManager, javaClass.name)
     }
 
-    protected open fun onShowNetworkError() {
-        tvKelinApkUpdaterSure?.text = "网络已断开，等待恢复..."
-    }
-
-    protected open fun onShowNetWorkAvailable() {
-        tvKelinApkUpdaterSure.text = "正在下载..."
+    protected open fun onShowNetworkStatusChanged(available: Boolean) {
+        tvKelinApkUpdaterSure?.text = if (available) "正在下载..." else "网络已断开，等待恢复..."
     }
 
     protected open fun onShowProgress(percentage: Int) {

@@ -1,4 +1,3 @@
 <resources>
-    <string name="app_name">ApkUpdater_demo</string>
-    <string name="request_install_packages">允许未知来源应用安装</string>
+    <string name="app_name">ApkUpdater</string>
 </resources>

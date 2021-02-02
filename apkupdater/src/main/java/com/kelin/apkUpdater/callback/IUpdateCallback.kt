@@ -1,5 +1,7 @@
 package com.kelin.apkUpdater.callback
 
+import com.kelin.apkUpdater.UpdateType
+
 /**
  * **描述:** 检查更新的监听。
  *
@@ -22,10 +24,10 @@ interface IUpdateCallback {
      * `true`表示有新的版本,
      * `false`则表示没有新的版本。
      * @param curVersionName 当前app的版本名称。
-     * @param isForceUpdate  是否是强制更新。这个字段的值其实就[UpdateInfo.isForceUpdate](com.kelin.apkUpdater.UpdateInfo.isForceUpdate)和
+     * @param updateType       更新类型。这个字段的值其实就[UpdateInfo.updateType](com.kelin.apkUpdater.UpdateInfo.updateType)和
      * [UpdateInfo.forceUpdateVersionCodes](com.kelin.apkUpdater.UpdateInfo.forceUpdateVersionCodes)的返回值。
      */
-    fun onSuccess(isAutoCheck: Boolean, haveNewVersion: Boolean, curVersionName: String, isForceUpdate: Boolean)
+    fun onSuccess(isAutoCheck: Boolean, haveNewVersion: Boolean, curVersionName: String, updateType: UpdateType)
 
     /**
      * 当失败的时候被执行，无论是检测更新失败，还是下载失败，都会执行。
@@ -37,10 +39,10 @@ interface IUpdateCallback {
      * `false`则表示没有新的版本。
      * @param curVersionName      当前app的版本名称。
      * @param checkMD5failedCount MD5校验失败失败次数，如果下载失败的原因是因为校验MD5失败的话该参数将会是一个大于0的数字。
-     * @param isForceUpdate       是否是强制更新。这个字段的值其实就[UpdateInfo.isForceUpdate](com.kelin.apkUpdater.UpdateInfo.isForceUpdate)和
+     * @param updateType       更新类型。这个字段的值其实就[UpdateInfo.updateType](com.kelin.apkUpdater.UpdateInfo.updateType)和
      * [UpdateInfo.forceUpdateVersionCodes](com.kelin.apkUpdater.UpdateInfo.forceUpdateVersionCodes)的返回值。
      */
-    fun onFiled(isAutoCheck: Boolean, isCanceled: Boolean, haveNewVersion: Boolean, curVersionName: String, checkMD5failedCount: Int, isForceUpdate: Boolean)
+    fun onFiled(isAutoCheck: Boolean, isCanceled: Boolean, haveNewVersion: Boolean, curVersionName: String, checkMD5failedCount: Int, updateType: UpdateType)
 
     /**
      * 当任务完毕后被调用，无论任务成功还是失败，也无论是否需要更新。

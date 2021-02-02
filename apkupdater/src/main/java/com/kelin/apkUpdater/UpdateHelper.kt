@@ -22,39 +22,37 @@ import java.util.*
  */
 object UpdateHelper {
     private const val CONFIG_NAME = "com_kelin_apkUpdater_config"
+
     /**
      * apk 文件存储路径
      */
     private const val SP_KEY_DOWNLOAD_APK_PATH = "com.kelin.apkUpdater.sp_key_download_apk_path"
+
     /**
      * 上一次下载的APK的版本号。
      */
     private const val SP_KEY_DOWNLOAD_APK_VERSION_CODE = "com.kelin.apkUpdater.sp_key_download_apk_version_code"
+
     /**
      * 用来获取下载Apk失败的次数。
      */
     private const val SP_KEY_DOWN_LOAD_APK_FAILED_COUNT = "com.kelin.apkUpadater.sp_key_down_load_apk_failed_count"
 
     /**
+     * 用来存取跳过版本的key。
+     */
+    private const val SP_KEY_SKIPPED_VERSION = "com.kelin.apkUpadater.sp_key_sp_key_skipped_version"
+
+    /**
      * 判断当前版本是否是强制更新。
      *
      * @return 如果是返回true，否则返回false。
      */
-    fun isForceUpdate(updateInfo: UpdateInfo, context: Context): Boolean {
-        return if (!updateInfo.isForceUpdate) {
-            false
+    fun getUpdateType(updateInfo: UpdateInfo, context: Context): UpdateType {
+        return if (updateInfo.forceUpdateVersionCodes?.contains(getCurrentVersionCode(context)) == true) {
+            UpdateType.UPDATE_FORCE
         } else {
-            val codes = updateInfo.forceUpdateVersionCodes
-            if (codes == null || codes.isEmpty()) {
-                true
-            } else {
-                for (code in codes) {
-                    if (getCurrentVersionCode(context) == code) {
-                        return true
-                    }
-                }
-                false
-            }
+            updateInfo.updateType
         }
     }
 
@@ -151,20 +149,28 @@ object UpdateHelper {
                 getEdit(context).apply {
                     remove(SP_KEY_DOWNLOAD_APK_PATH)
                     remove(SP_KEY_DOWNLOAD_APK_VERSION_CODE)
-                }.commit()
+                }.apply()
             }
         }
     }
 
+    fun setSkippedVersion(context: Context, version: Int) {
+        getEdit(context).putInt(SP_KEY_SKIPPED_VERSION, version).apply()
+    }
+
+    fun getSkippedVersion(context: Context): Int {
+        return context.getSharedPreferences(CONFIG_NAME, Context.MODE_PRIVATE).getInt(SP_KEY_SKIPPED_VERSION, 0)
+    }
+
     @JvmStatic
     fun clearDownloadFailedCount(context: Context) {
-        getEdit(context).remove(SP_KEY_DOWN_LOAD_APK_FAILED_COUNT).commit()
+        getEdit(context).remove(SP_KEY_DOWN_LOAD_APK_FAILED_COUNT).apply()
     }
 
     @JvmStatic
     fun downloadFailedCountPlus(context: Context) {
         val failedCount = getDownloadFailedCount(context)
-        getEdit(context).putInt(SP_KEY_DOWN_LOAD_APK_FAILED_COUNT, failedCount + 1).commit()
+        getEdit(context).putInt(SP_KEY_DOWN_LOAD_APK_FAILED_COUNT, failedCount + 1).apply()
     }
 
     @JvmStatic
@@ -174,7 +180,7 @@ object UpdateHelper {
 
     @JvmStatic
     fun putApkPath2Sp(context: Context, value: String?) {
-        getEdit(context).putString(SP_KEY_DOWNLOAD_APK_PATH, value).commit()
+        getEdit(context).putString(SP_KEY_DOWNLOAD_APK_PATH, value).apply()
     }
 
     @JvmStatic
@@ -184,7 +190,7 @@ object UpdateHelper {
 
     @JvmStatic
     fun putApkVersionCode2Sp(context: Context, value: Int) {
-        getEdit(context).putInt(SP_KEY_DOWNLOAD_APK_VERSION_CODE, value).commit()
+        getEdit(context).putInt(SP_KEY_DOWNLOAD_APK_VERSION_CODE, value).apply()
     }
 
     @JvmStatic

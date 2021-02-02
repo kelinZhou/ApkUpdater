@@ -20,7 +20,7 @@ import com.kelin.apkUpdater.UpdateHelper.getCurrentVersionName
 import com.kelin.apkUpdater.UpdateHelper.getDownloadFailedCount
 import com.kelin.apkUpdater.UpdateHelper.getFileSignature
 import com.kelin.apkUpdater.UpdateHelper.installApk
-import com.kelin.apkUpdater.UpdateHelper.isForceUpdate
+import com.kelin.apkUpdater.UpdateHelper.getUpdateType
 import com.kelin.apkUpdater.UpdateHelper.putApkVersionCode2Sp
 import com.kelin.apkUpdater.UpdateHelper.removeOldApk
 import com.kelin.apkUpdater.callback.CompleteUpdateCallback
@@ -47,7 +47,8 @@ class ApkUpdater private constructor(
 ) {
 
     companion object {
-        internal var fileProvider:String = ""
+        internal var fileProvider: String = ""
+
         /**
          * 初始化，用于初始化ApkUpdater库，您需要在Application的onCreate方法中调用，否则在升级时有可能无法弹窗。
          * @param context 需要Context对象(Application的Context即可)。
@@ -78,15 +79,18 @@ class ApkUpdater private constructor(
      * 更新的进度监听。
      */
     private val mOnProgressListener by lazy { OnLoadProgressListener() }
+
     /**
      * 获取一个不为空的UpdateInfo，如果为空则抛出异常。
      */
     private val requireUpdateInfo: UpdateInfo
         get() = mUpdateInfo ?: throw NullPointerException("The UpdateInfo must not be null!")
+
     /**
      * 当前的版本名称。
      */
     private val localVersionName by lazy { getCurrentVersionName(mApplicationContext) }
+
     /**
      * 当前的版本号。
      */
@@ -95,8 +99,8 @@ class ApkUpdater private constructor(
     /**
      * 判断当前版本是否是强制更新。
      */
-    private val isForceUpdate: Boolean
-        get() = if (mUpdateInfo != null) isForceUpdate(requireUpdateInfo, mApplicationContext) else false
+    private val updateType: UpdateType
+        get() = if (mUpdateInfo != null) getUpdateType(requireUpdateInfo, mApplicationContext) else UpdateType.UPDATE_WEAK
 
     //接口回调，下载进度
     private val serviceConnection: ServiceConnection by lazy {
@@ -147,10 +151,16 @@ class ApkUpdater private constructor(
     @JvmOverloads
     fun check(updateInfo: UpdateInfo, autoCheck: Boolean = true, autoInstall: Boolean = true) {
         require(!(!autoInstall && mCallback == null)) { "Because you neither set up to monitor installed automatically, so the check update is pointless." }
-        val haveNewVersion = updateInfo.versionCode > localVersionCode
+        val haveNewVersion = updateInfo.versionCode.let {
+            if (autoCheck) { //只有自动更新时才检测是否跳过版本
+                it != UpdateHelper.getSkippedVersion(mApplicationContext) && it > localVersionCode
+            } else {
+                it > localVersionCode
+            }
+        }
         if (!haveNewVersion) {
             mCallback?.apply {
-                onSuccess(autoCheck, false, localVersionName, false)
+                onSuccess(autoCheck, false, localVersionName, UpdateType.UPDATE_WEAK)
                 onCompleted()
             }
         } else {
@@ -159,7 +169,7 @@ class ApkUpdater private constructor(
             if (TextUtils.isEmpty(updateInfo.downLoadsUrl)) {
                 mCallback?.apply {
                     (this as? CompleteUpdateCallback)?.onDownloadFailed()
-                    onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, isForceUpdate)
+                    onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, updateType)
                     onCompleted()
                 }
             } else {
@@ -180,7 +190,7 @@ class ApkUpdater private constructor(
 
     private fun onShowUpdateInformDialog() {
         requireUpdateInfo.also {
-            dialog.show(ActivityStackManager.requireStackTopActivity(), it.versionName, it.updateMessageTitle, it.updateMessage, isForceUpdate)
+            dialog.show(ActivityStackManager.requireStackTopActivity(), it.versionName, it.updateMessageTitle, it.updateMessage, updateType, mIsAutoCheck)
         }
     }
 
@@ -196,6 +206,20 @@ class ApkUpdater private constructor(
                 "Because of your dialog is not custom, so you can't call the method."
             }
             respondCheckHandlerResult(isContinue)
+        }
+    }
+
+    /**
+     * 跳过当前版本。自动更新时当前版本不在提示。
+     */
+    fun skipThisVersion() {
+        mUpdateInfo?.versionCode?.also {
+            UpdateHelper.setSkippedVersion(mApplicationContext, it)
+        }
+        mCallback?.apply {
+            (this as? CompleteUpdateCallback)?.onDownloadCancelled()
+            onFiled(mIsAutoCheck, true, mHaveNewVersion, localVersionName, 0, updateType)
+            onCompleted()
         }
     }
 
@@ -221,7 +245,7 @@ class ApkUpdater private constructor(
         } else {
             mCallback?.apply {
                 (this as? CompleteUpdateCallback)?.onDownloadCancelled()
-                onFiled(mIsAutoCheck, true, mHaveNewVersion, localVersionName, 0, isForceUpdate)
+                onFiled(mIsAutoCheck, true, mHaveNewVersion, localVersionName, 0, updateType)
                 onCompleted()
             }
         }
@@ -238,7 +262,7 @@ class ApkUpdater private constructor(
                             } else {
                                 mCallback?.apply {
                                     (this as? CompleteUpdateCallback)?.onDownloadSuccess(apkFile, true)
-                                    onFiled(mIsAutoCheck, isCanceled = true, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, isForceUpdate = isForceUpdate)
+                                    onFiled(mIsAutoCheck, isCanceled = true, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, updateType = updateType)
                                     onCompleted()
                                 }
                             }
@@ -249,7 +273,7 @@ class ApkUpdater private constructor(
         } else {
             mCallback?.apply {
                 (this as? CompleteUpdateCallback)?.onDownloadSuccess(apkFile, true)
-                onSuccess(mIsAutoCheck, true, localVersionName, isForceUpdate)
+                onSuccess(mIsAutoCheck, true, localVersionName, updateType)
                 onCompleted()
             }
         }
@@ -260,7 +284,7 @@ class ApkUpdater private constructor(
         if (!installApk) {
             mCallback?.apply {
                 (this as? CompleteUpdateCallback)?.onInstallFailed()
-                onFiled(mIsAutoCheck, isCanceled = false, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, isForceUpdate = isForceUpdate)
+                onFiled(mIsAutoCheck, isCanceled = false, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, updateType = updateType)
                 onCompleted()
             }
         } //如果installApk为true则不需要回调了，因为安装成功必定会杀死进程。杀掉进程后回调已经没有意义了。
@@ -298,7 +322,7 @@ class ApkUpdater private constructor(
      */
     private fun startDownload() {
         if (!isBindService) {
-            mServiceIntent = DownloadService.obtainIntent(mApplicationContext, requireUpdateInfo.downLoadsUrl!!, isForceUpdate, defaultApkName).also {
+            mServiceIntent = DownloadService.obtainIntent(mApplicationContext, requireUpdateInfo.downLoadsUrl!!, updateType, defaultApkName).also {
                 mApplicationContext.startService(it)
                 isBindService = mApplicationContext.bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
             }
@@ -322,6 +346,7 @@ class ApkUpdater private constructor(
          * 用来配置下载的监听回调对象。
          */
         private var callback: IUpdateCallback? = null
+
         /**
          * 自定义弹窗。
          */
@@ -453,7 +478,7 @@ class ApkUpdater private constructor(
             dialog.dismiss()
             mCallback?.apply {
                 (this as? CompleteUpdateCallback)?.onDownloadFailed()
-                onFiled(mIsAutoCheck, false, mHaveNewVersion, localVersionName, getDownloadFailedCount(mApplicationContext), isForceUpdate)
+                onFiled(mIsAutoCheck, false, mHaveNewVersion, localVersionName, getDownloadFailedCount(mApplicationContext), updateType)
                 onCompleted()
             }
         }

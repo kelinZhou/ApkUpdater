@@ -27,7 +27,7 @@ class DownloadService : Service() {
 
     //下载任务ID
     private var downloadId: Long = 0
-    private var mIsForceUpdate = false
+    private var updateType = UpdateType.UPDATE_WEAK.code
     private var mApkName: String? = null
     private var mLastFraction = -0x1
     private var mIsLoadFailed = false
@@ -135,7 +135,7 @@ class DownloadService : Service() {
 
     override fun onBind(intent: Intent): IBinder {
         val downloadUrl = intent.getStringExtra(KEY_DOWNLOAD_URL)
-        mIsForceUpdate = intent.getBooleanExtra(KEY_IS_FORCE_UPDATE, false)
+        updateType = intent.getIntExtra(KEY_IS_FORCE_UPDATE, UpdateType.UPDATE_WEAK.code)
         mApkName = intent.getStringExtra(KEY_APK_NAME)
         downloadApk(downloadUrl)
         return DownloadBinder()
@@ -147,7 +147,7 @@ class DownloadService : Service() {
     private fun downloadApk(url: String) {
         registerContentObserver()
         val request = DownloadManager.Request(Uri.parse(url))
-        val visibility = if (mIsForceUpdate) DownloadManager.Request.VISIBILITY_HIDDEN else DownloadManager.Request.VISIBILITY_VISIBLE
+        val visibility = if (updateType == UpdateType.UPDATE_FORCE.code) DownloadManager.Request.VISIBILITY_HIDDEN else DownloadManager.Request.VISIBILITY_VISIBLE
         request.setTitle(getAppName(applicationContext, "更新")).setNotificationVisibility(visibility).setDestinationInExternalFilesDir(applicationContext, Environment.DIRECTORY_DOWNLOADS, mApkName)
         //将下载请求放入队列， return下载任务的ID
         downloadId = downloadManager.enqueue(request)
@@ -336,11 +336,11 @@ class DownloadService : Service() {
          */
         private const val KEY_APK_NAME = "key_apk_name"
 
-        fun obtainIntent(context: Context, downloadUrl: String, isForceUpdate: Boolean, apkName: String): Intent {
+        fun obtainIntent(context: Context, downloadUrl: String, updateType: UpdateType, apkName: String): Intent {
             return Intent(context, DownloadService::class.java).apply {
                 putExtra(KEY_DOWNLOAD_URL, downloadUrl)
                 putExtra(KEY_APK_NAME, apkName)
-                putExtra(KEY_IS_FORCE_UPDATE, isForceUpdate)
+                putExtra(KEY_IS_FORCE_UPDATE, updateType.code)
             }
         }
     }
