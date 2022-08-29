@@ -189,8 +189,10 @@ class ApkUpdater private constructor(
     }
 
     private fun onShowUpdateInformDialog() {
-        requireUpdateInfo.also {
-            dialog.show(ActivityStackManager.requireStackTopActivity(), it.versionName, it.updateMessageTitle, it.updateMessage, updateType, mIsAutoCheck)
+        ActivityStackManager.stackTopActivity?.also { activity ->
+            requireUpdateInfo.also {
+                dialog.show(activity, it.versionName, it.updateMessageTitle, it.updateMessage, updateType, mIsAutoCheck)
+            }
         }
     }
 
@@ -254,19 +256,21 @@ class ApkUpdater private constructor(
     private fun handlerDownloadSuccess(apkFile: File) {
         if (mAutoInstall) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                OkPermission.with(ActivityStackManager.requireStackTopActivity())
-                        .addDefaultPermissions(Manifest.permission.REQUEST_INSTALL_PACKAGES)
-                        .checkAndApply { granted, _ ->
-                            if (granted) {
-                                onInstallApk(apkFile)
-                            } else {
-                                mCallback?.apply {
-                                    (this as? CompleteUpdateCallback)?.onDownloadSuccess(apkFile, true)
-                                    onFiled(mIsAutoCheck, isCanceled = true, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, updateType = updateType)
-                                    onCompleted()
+                ActivityStackManager.stackTopActivity?.also {
+                    OkPermission.with(it)
+                            .addDefaultPermissions(Manifest.permission.REQUEST_INSTALL_PACKAGES)
+                            .checkAndApply { granted, _ ->
+                                if (granted) {
+                                    onInstallApk(apkFile)
+                                } else {
+                                    mCallback?.apply {
+                                        (this as? CompleteUpdateCallback)?.onDownloadSuccess(apkFile, true)
+                                        onFiled(mIsAutoCheck, isCanceled = true, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, updateType = updateType)
+                                        onCompleted()
+                                    }
                                 }
                             }
-                        }
+                }
             } else {
                 onInstallApk(apkFile)
             }
@@ -454,21 +458,23 @@ class ApkUpdater private constructor(
 
         override fun onLoadSuccess(apkFile: File, isCache: Boolean) {
             dialog.dismiss()
-            if (!checkFileSignature(apkFile)) {
-                removeOldApk(mApplicationContext)
-                downloadFailedCountPlus(mApplicationContext)
-                AlertDialog.Builder(ActivityStackManager.requireStackTopActivity())
-                        .setCancelable(false)
-                        .setTitle("提示：")
-                        .setMessage("下载失败，请尝试切换您的网络环境后再试~")
-                        .setNegativeButton("确定") { _, _ ->
-                            mOnProgressListener.onLoadFailed()
-                        }.create().show()
-            } else {
-                clearDownloadFailedCount(mApplicationContext)
-                unregisterNetWorkReceiver()
-                stopService() //结束服务
-                handlerDownloadSuccess(apkFile)
+            ActivityStackManager.stackTopActivity?.also { activity ->
+                if (!checkFileSignature(apkFile)) {
+                    removeOldApk(mApplicationContext)
+                    downloadFailedCountPlus(mApplicationContext)
+                    AlertDialog.Builder(activity)
+                            .setCancelable(false)
+                            .setTitle("提示：")
+                            .setMessage("下载失败，请尝试切换您的网络环境后再试~")
+                            .setNegativeButton("确定") { _, _ ->
+                                mOnProgressListener.onLoadFailed()
+                            }.create().show()
+                } else {
+                    clearDownloadFailedCount(mApplicationContext)
+                    unregisterNetWorkReceiver()
+                    stopService() //结束服务
+                    handlerDownloadSuccess(apkFile)
+                }
             }
         }
 
