@@ -62,15 +62,25 @@ object UpdateHelper {
      * @param context 需要一个上下文。
      * @return 返回当前的版本号。
      */
-    fun getCurrentVersionCode(context: Context): Int {
-        val packageManager = context.packageManager
-        var packageInfo: PackageInfo? = null
-        try {
-            packageInfo = packageManager.getPackageInfo(context.packageName, 0)
-        } catch (e: PackageManager.NameNotFoundException) {
-            e.printStackTrace()
+    fun getCurrentVersionCode(context: Context): Long {
+        return if (ApkUpdater.currentAppVersion > 0) {
+            ApkUpdater.currentAppVersion
+        } else {
+            val packageManager = context.packageManager
+            var packageInfo: PackageInfo? = null
+            try {
+                packageInfo = packageManager.getPackageInfo(context.packageName, 0)
+            } catch (e: PackageManager.NameNotFoundException) {
+                e.printStackTrace()
+            }
+            packageInfo?.let {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    it.longVersionCode
+                } else {
+                    it.versionCode.toLong()
+                }
+            } ?: 0L
         }
-        return packageInfo?.versionCode ?: 0
     }
 
     /**

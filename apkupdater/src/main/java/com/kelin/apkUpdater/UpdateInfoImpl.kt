@@ -48,5 +48,5 @@ class UpdateInfoImpl(
          * @return 返回你要强制更新的版本号，可以返回 null ，如果返回 null 并且 [.isForceUpdate] 返回 true 的话
          * 则表示所有版本全部强制更新。
          */
-        override val forceUpdateVersionCodes: IntArray? = null
+        override val forceUpdateVersionCodes: LongArray? = null
 ) : UpdateInfo

@@ -48,14 +48,17 @@ class ApkUpdater private constructor(
 
     companion object {
         internal var fileProvider: String = ""
+        internal var currentAppVersion: Long = 0
 
         /**
          * 初始化，用于初始化ApkUpdater库，您需要在Application的onCreate方法中调用，否则在升级时有可能无法弹窗。
          * @param context 需要Context对象(Application的Context即可)。
          * @param fileProvider 用于适配Android7.0的文件管理。
          */
-        fun init(context: Context, fileProvider: String = context.applicationContext.packageName + ".fileProvider") {
+        fun init(context: Context, currentVersion: Long? = null, fileProvider: String = context.applicationContext.packageName + ".fileProvider") {
             ActivityStackManager.initUpdater(context)
+
+            this.currentAppVersion = currentVersion ?: 0
             this.fileProvider = fileProvider
         }
     }
@@ -408,6 +411,7 @@ class ApkUpdater private constructor(
                 ConnectivityManager.TYPE_MOBILE -> if (!isBindService) {
                     startDownload()
                 }
+
                 ConnectivityManager.TYPE_WIFI -> if (!isBindService) {
                     startDownload()
                 }
