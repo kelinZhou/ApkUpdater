@@ -21,7 +21,7 @@ import java.util.*
  *
  * **版本:** v 1.0.0
  */
-object ActivityStackManager {
+internal object ActivityStackManager {
     private val activityStack = ArrayList<Activity>()
     private var application: Context? = null
     internal val applicationContext: Context
@@ -34,13 +34,6 @@ object ActivityStackManager {
 
     val stackTopActivity: Activity?
         get() = if (activityStack.isEmpty()) null else activityStack[0]
-
-    fun requireStackTopActivity(): Activity {
-        return activityStack.firstOrNull() ?: throw IllegalCallException("No Activity is currently started！")
-    }
-
-    val allActivity: List<Activity>
-        get() = ArrayList(activityStack)
 
     private class ApplicationActivityLifecycleCallbacks : ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {

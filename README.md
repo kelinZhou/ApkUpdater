@@ -11,7 +11,9 @@
 ![截图4](materials/demo_04.png)
 
 ## 更新
-### 3.1.1 优化当前App版本的获取方式，防止AppInfo获取失败导致获取当前App版本号错误的Bug。
+### 3.1.2 优化当前App版本的获取方式，防止AppInfo获取失败导致获取当前App版本号错误的Bug。
+
+### 3.1.1 修复IllegalCallException: No Activity is currently started！的问题。
 
 ### 3.1.0 优化升级逻辑，增加弱更新功能。
 1. UpdateInfo接口移除了isForceUpdate的属性，改为updateType属性，其类型为```UpdateType```。```UpdateType```为枚举类型，共有以下3个类型：
