@@ -88,6 +88,7 @@ internal object ActivityStackManager {
         override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
         override fun onActivityDestroyed(activity: Activity) {
             Log.w("Downloader", "onActivity Destroy：${activity.javaClass.name}, 监听Size=${stackTopActivityListeners.size}")
+            activityStack.remove(activity)
             stackTopActivity?.also { top ->
                 Log.w("Downloader", "获取到Top:${top.javaClass.name}")
                 stackTopActivityListeners.forEach {
@@ -100,7 +101,6 @@ internal object ActivityStackManager {
                     }
                 }
             }
-            activityStack.remove(activity)
         }
     }
 }
