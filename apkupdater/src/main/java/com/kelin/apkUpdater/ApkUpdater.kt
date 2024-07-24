@@ -49,6 +49,7 @@ class ApkUpdater private constructor(
 ) {
 
     companion object {
+        private const val TAG = "ApkUpdater"
         internal var fileProvider: String = ""
         internal var currentAppVersion: Long = 0
 
@@ -145,6 +146,7 @@ class ApkUpdater private constructor(
      * 处理网络异常。
      */
     private fun onTipNetworkError() {
+        Log.i(TAG, "网络错误，下载暂停。")
         enabledDialog.also {
             if (it == null) {
                 if (updateType != UpdateType.UPDATE_FORCE) {
@@ -289,15 +291,12 @@ class ApkUpdater private constructor(
 
     private fun handlerDownloadSuccess(apkFile: File) {
         if (mAutoInstall) {
-            Log.w("Downloader", "下载成功，自动安装。")
+            Log.i(TAG, "Apk下载成功。")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                Log.w("Downloader", "获取栈顶Activity")
                 ActivityStackManager.watchStackTopActivity(true) {
-                    Log.w("Downloader", "获取栈顶Activity成功：${it.javaClass.name}")
                     OkPermission.with(it)
                         .addDefaultPermissions(Manifest.permission.REQUEST_INSTALL_PACKAGES)
                         .checkAndApply { granted, _ ->
-                            Log.w("Downloader", "申请权限结果：${granted}")
                             if (granted) {
                                 onInstallApk(apkFile)
                             } else {
@@ -312,7 +311,6 @@ class ApkUpdater private constructor(
                     true
                 }
             } else {
-                Log.w("Downloader", "开始安装")
                 onInstallApk(apkFile)
             }
         } else {
@@ -326,6 +324,7 @@ class ApkUpdater private constructor(
     }
 
     private fun onInstallApk(apkFile: File?) {
+        Log.w(TAG, "开始安装Apk:${apkFile?.absolutePath}")
         val installApk = installApk(mApplicationContext, apkFile)
         if (!installApk) {
             mCallback?.apply {
@@ -377,6 +376,7 @@ class ApkUpdater private constructor(
      */
     private fun startDownload() {
         if (!isBindService && mUpdateInfo != null) {
+            Log.i(TAG, "开始下载")
             mServiceIntent = DownloadService.obtainIntent(mApplicationContext, requireUpdateInfo.downLoadsUrl!!, updateType, defaultApkName).also {
                 mApplicationContext.startService(it)
                 isBindService = mApplicationContext.bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
