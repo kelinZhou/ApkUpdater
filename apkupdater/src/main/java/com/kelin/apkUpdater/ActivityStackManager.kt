@@ -42,33 +42,16 @@ internal object ActivityStackManager {
     val stackTopActivity: Activity?
         get() = if (activityStack.isEmpty()) null else activityStack[0]
 
-
-    /**
-     * 获取当前栈顶的Activity。
-     * @param onlyFragmentActivity 是否只获取FragmentActivity。
-     * @return 返回找到的Activity，如果没有获取到符合条件的Activity则返回null。
-     */
-    fun stackTopActivity(onlyFragmentActivity: Boolean = false): Activity? {
-        for (i in activityStack.lastIndex downTo 0) {
-            activityStack[i].also {
-                if (!it.isDestroyed) {
-                    if (!onlyFragmentActivity || it is FragmentActivity) {
-                        return it
-                    }
-                }
-            }
-        }
-        return null
-    }
-
     /**
      * 实时观察当前栈顶的Activity。
      * @param onlyFragmentActivity 是否只获取FragmentActivity。
      * @param l 得到栈顶Activity后的回调，回调如果返回true则表示后续不需要在继续监听了，为false则表示后续还想要继续监听。
      */
     fun watchStackTopActivity(onlyFragmentActivity: Boolean = false, l: ActivityCreatedListener) {
-        stackTopActivity(onlyFragmentActivity).also {
-            if (it != null && (it as? LifecycleOwner)?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
+        stackTopActivity?.takeIf {
+            !onlyFragmentActivity || it is FragmentActivity
+        }.also {
+            if (it != null && (it as? LifecycleOwner)?.lifecycle?.currentState != Lifecycle.State.DESTROYED) {
                 if (!l(it)) {
                     stackTopActivityListeners.add(ActivityCreatedListenerWrapper(onlyFragmentActivity, l))
                 }

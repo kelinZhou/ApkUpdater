@@ -1,5 +1,6 @@
 package com.kelin.updatemanagerdemo
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -15,7 +16,7 @@ import com.kelin.updatemanagerdemo.TwoActivity
  *
  * **版本:** v 1.0.0
  */
-class TwoActivity : AppCompatActivity() {
+class TwoActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_two)
