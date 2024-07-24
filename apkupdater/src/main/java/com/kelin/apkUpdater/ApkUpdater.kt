@@ -8,6 +8,7 @@ import android.content.ServiceConnection
 import android.os.Build
 import android.os.IBinder
 import android.text.TextUtils
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.kelin.apkUpdater.DownloadService.DownloadBinder
@@ -288,11 +289,15 @@ class ApkUpdater private constructor(
 
     private fun handlerDownloadSuccess(apkFile: File) {
         if (mAutoInstall) {
+            Log.w("Downloader", "下载成功，自动安装。")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Log.w("Downloader", "获取栈顶Activity")
                 ActivityStackManager.watchStackTopActivity(true) {
+                    Log.w("Downloader", "获取栈顶Activity成功：${it.javaClass.name}")
                     OkPermission.with(it)
                         .addDefaultPermissions(Manifest.permission.REQUEST_INSTALL_PACKAGES)
                         .checkAndApply { granted, _ ->
+                            Log.w("Downloader", "申请权限结果：${granted}")
                             if (granted) {
                                 onInstallApk(apkFile)
                             } else {
@@ -307,6 +312,7 @@ class ApkUpdater private constructor(
                     true
                 }
             } else {
+                Log.w("Downloader", "开始安装")
                 onInstallApk(apkFile)
             }
         } else {

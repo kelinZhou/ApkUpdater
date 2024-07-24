@@ -5,6 +5,7 @@ import android.app.Application
 import android.app.Application.ActivityLifecycleCallbacks
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -49,13 +50,17 @@ internal object ActivityStackManager {
      */
     fun watchStackTopActivity(onlyFragmentActivity: Boolean = false, l: ActivityCreatedListener) {
         stackTopActivity?.takeIf {
+            Log.w("Downloader", "获取到Activity:${it.javaClass.name} (${!onlyFragmentActivity || it is FragmentActivity})")
             !onlyFragmentActivity || it is FragmentActivity
         }.also {
+            Log.w("Downloader", "判断Activity:${it?.javaClass?.name}")
             if (it != null && (it as? LifecycleOwner)?.lifecycle?.currentState != Lifecycle.State.DESTROYED) {
                 if (!l(it)) {
+                    Log.w("Downloader", "添加监听Activity2")
                     stackTopActivityListeners.add(ActivityCreatedListenerWrapper(onlyFragmentActivity, l))
                 }
             } else {
+                Log.w("Downloader", "添加监听Activity")
                 stackTopActivityListeners.add(ActivityCreatedListenerWrapper(onlyFragmentActivity, l))
             }
         }
@@ -63,9 +68,12 @@ internal object ActivityStackManager {
 
     private class ApplicationActivityLifecycleCallbacks : ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+            Log.w("Downloader", "onActivity Create：${activity.javaClass.name}, 监听Size=${stackTopActivityListeners.size}")
             stackTopActivityListeners.forEach {
+                Log.w("Downloader", "遍历监听:${!it.onlyFragmentActivity || activity is FragmentActivity}")
                 if (!it.onlyFragmentActivity || activity is FragmentActivity) {
                     if (it.listener.invoke(activity)) {
+                        Log.w("Downloader", "移除监听")
                         stackTopActivityListeners.remove(it)
                     }
                 }
@@ -79,10 +87,14 @@ internal object ActivityStackManager {
         override fun onActivityStopped(activity: Activity) {}
         override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
         override fun onActivityDestroyed(activity: Activity) {
+            Log.w("Downloader", "onActivity Destroy：${activity.javaClass.name}, 监听Size=${stackTopActivityListeners.size}")
             stackTopActivity?.also { top ->
+                Log.w("Downloader", "获取到Top:${top.javaClass.name}")
                 stackTopActivityListeners.forEach {
+                    Log.w("Downloader", "遍历监听:${!it.onlyFragmentActivity || top is FragmentActivity}")
                     if (!it.onlyFragmentActivity || top is FragmentActivity) {
                         if (it.listener.invoke(top)) {
+                            Log.w("Downloader", "移除监听")
                             stackTopActivityListeners.remove(it)
                         }
                     }
