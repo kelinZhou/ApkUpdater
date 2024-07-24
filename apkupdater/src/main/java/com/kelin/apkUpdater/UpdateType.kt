@@ -17,7 +17,7 @@ enum class UpdateType(val code: Int) {
     UPDATE_WEAK(0x01),
 
     /**
-     * 正常更新。
+     * 正常更新，当更新类型为该类型时应当可以让用户选择是否立即更新(仅在自动更新时才会出现该类型)，如果不立即更新则在下一次再次提示用户。
      */
     UPDATE_NORMAL(0x02),
 

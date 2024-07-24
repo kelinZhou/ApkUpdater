@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.ScrollView
-import com.kelin.apkUpdater.R
+import com.kelin.apkupdater.R
 
 /**
  * **描述: ** 可以指定最大高度的滚动控件。

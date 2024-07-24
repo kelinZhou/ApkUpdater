@@ -2,7 +2,6 @@ package com.kelin.updatemanagerdemo
 
 import android.app.Application
 import com.kelin.apkUpdater.ApkUpdater
-import com.squareup.leakcanary.LeakCanary
 
 /**
  * 描述
@@ -12,10 +11,7 @@ import com.squareup.leakcanary.LeakCanary
  */
 class App : Application() {
     override fun onCreate() {
-        if (!LeakCanary.isInAnalyzerProcess(this)) {
-            LeakCanary.install(this)
-        }
-        ApkUpdater.init(this, "$packageName.fileProvider")
+        ApkUpdater.init(this, 0, "$packageName.fileProvider")
         super.onCreate()
     }
 }

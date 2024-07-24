@@ -5,10 +5,10 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.net.ConnectivityManager
 import android.os.Build
 import android.os.IBinder
 import android.text.TextUtils
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.kelin.apkUpdater.DownloadService.DownloadBinder
 import com.kelin.apkUpdater.UpdateHelper.clearDownloadFailedCount
@@ -29,7 +29,8 @@ import com.kelin.apkUpdater.callback.IUpdateCallback
 import com.kelin.apkUpdater.dialog.ApkUpdateDialog
 import com.kelin.apkUpdater.dialog.DefaultUpdateDialog
 import com.kelin.apkUpdater.util.NetWorkStateUtil
-import com.kelin.apkUpdater.util.NetWorkStateUtil.ConnectivityChangeReceiver
+import com.kelin.apkUpdater.util.NetworkStateChangedListener
+import com.kelin.apkupdater.R
 import com.kelin.okpermission.OkPermission
 import java.io.File
 import java.text.SimpleDateFormat
@@ -42,8 +43,8 @@ import java.util.*
  * 版本 v 1.0.0
  */
 class ApkUpdater private constructor(
-        private val dialogGenerator: ((updater: ApkUpdater) -> ApkUpdateDialog)?,
-        private var mCallback: IUpdateCallback?
+    private val dialogGenerator: ((updater: ApkUpdater) -> ApkUpdateDialog)?,
+    private var mCallback: IUpdateCallback?
 ) {
 
     companion object {
@@ -53,11 +54,12 @@ class ApkUpdater private constructor(
         /**
          * 初始化，用于初始化ApkUpdater库，您需要在Application的onCreate方法中调用，否则在升级时有可能无法弹窗。
          * @param context 需要Context对象(Application的Context即可)。
+         * @param currentVersion 当前App的版本号，如果不传则通过系统Api获取(可能不准确)，建议传入。
          * @param fileProvider 用于适配Android7.0的文件管理。
          */
-        fun init(context: Context, currentVersion: Long? = null, fileProvider: String = context.applicationContext.packageName + ".fileProvider") {
+        fun init(context: Context, currentVersion: Long?, fileProvider: String = context.applicationContext.packageName + ".fileProvider") {
             ActivityStackManager.initUpdater(context)
-
+            NetWorkStateUtil.init(context, false)
             this.currentAppVersion = currentVersion ?: 0
             this.fileProvider = fileProvider
         }
@@ -70,13 +72,25 @@ class ApkUpdater private constructor(
     private var mHaveNewVersion = false
     private var mIsChecked = false
     private var mAutoInstall = true
-    private val mNetWorkStateChangedReceiver by lazy { NetWorkStateChangedReceiver() }
     private val mApplicationContext: Context = ActivityStackManager.applicationContext
     private var mIsAutoCheck = false
+
+    private val connectChangedListener: NetworkStateChangedListener = { connected ->
+        if (!isBindService) {
+            if (connected) {
+                startDownload()
+            } else {
+                onTipNetworkError()
+            }
+        }
+    }
 
     private val dialog: ApkUpdateDialog by lazy {
         dialogGenerator?.invoke(this) ?: DefaultUpdateDialog(this)
     }
+
+    private val enabledDialog: ApkUpdateDialog?
+        get() = dialog.takeIf { !it.isDismissed }
 
     /**
      * 更新的进度监听。
@@ -126,14 +140,19 @@ class ApkUpdater private constructor(
         mCallback = null
     }
 
-    private fun registerNetWorkReceiver() {
-        if (!mNetWorkStateChangedReceiver.isRegister) {
-            NetWorkStateUtil.registerReceiver(mApplicationContext, mNetWorkStateChangedReceiver)
+    /**
+     * 处理网络异常。
+     */
+    private fun onTipNetworkError() {
+        enabledDialog.also {
+            if (it == null) {
+                if (updateType != UpdateType.UPDATE_FORCE) {
+                    ActivityStackManager.stackTopActivity?.also { ctx -> Toast.makeText(ctx, ctx.getString(R.string.kelin_apk_updater_network_error_tip), Toast.LENGTH_SHORT).show() }
+                }
+            } else {
+                it.onNetworkError()
+            }
         }
-    }
-
-    private fun unregisterNetWorkReceiver() {
-        NetWorkStateUtil.unregisterReceiver(mApplicationContext, mNetWorkStateChangedReceiver)
     }
 
     private fun stopService() { //判断是否真的下载完成进行安装了，以及是否注册绑定过服务
@@ -152,50 +171,56 @@ class ApkUpdater private constructor(
      * @param autoInstall 是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
      */
     @JvmOverloads
-    fun check(updateInfo: UpdateInfo, autoCheck: Boolean = true, autoInstall: Boolean = true) {
-        require(!(!autoInstall && mCallback == null)) { "Because you neither set up to monitor installed automatically, so the check update is pointless." }
-        val haveNewVersion = updateInfo.versionCode.let {
-            if (autoCheck) { //只有自动更新时才检测是否跳过版本
-                it != UpdateHelper.getSkippedVersion(mApplicationContext) && it > localVersionCode
-            } else {
-                it > localVersionCode
+    fun check(updateInfo: UpdateInfo, autoCheck: Boolean = true, autoInstall: Boolean = true): Boolean {
+        return if (mUpdateInfo == null) {
+            require(!(!autoInstall && mCallback == null)) { "Because you neither set up to monitor installed automatically, so the check update is pointless." }
+            val haveNewVersion = updateInfo.versionCode.let {
+                if (autoCheck) { //只有自动更新时才检测是否跳过版本
+                    it != UpdateHelper.getSkippedVersion(mApplicationContext) && it > localVersionCode
+                } else {
+                    it > localVersionCode
+                }
             }
-        }
-        if (!haveNewVersion) {
-            mCallback?.apply {
-                onSuccess(autoCheck, false, localVersionName, UpdateType.UPDATE_WEAK)
-                onCompleted()
-            }
-        } else {
-            mUpdateInfo = updateInfo
-            mIsAutoCheck = autoCheck
-            if (TextUtils.isEmpty(updateInfo.downLoadsUrl)) {
+            if (!haveNewVersion) {
                 mCallback?.apply {
-                    (this as? CompleteUpdateCallback)?.onDownloadFailed()
-                    onFiled(autoCheck, false, haveNewVersion, localVersionName, 0, updateType)
+                    onSuccess(autoCheck, false, localVersionName, UpdateType.UPDATE_WEAK)
                     onCompleted()
                 }
             } else {
-                mHaveNewVersion = true
-                mAutoInstall = autoInstall
-                mIsChecked = true
-                //如果这个条件满足说明上一次没有安装。有因为即使上一次没有安装最新的版本也有可能超出了上一次下载的版本，所以要在这里判断。
-                val apkPath = getApkPathFromSp(mApplicationContext)
-                if (getApkVersionCodeFromSp(mApplicationContext) == updateInfo.versionCode && getApkPathFromSp(mApplicationContext).endsWith(".apk", true) && File(apkPath).exists()) {
-                    mIsLoaded = true
+                if (TextUtils.isEmpty(updateInfo.downLoadsUrl)) {
+                    mCallback?.apply {
+                        (this as? CompleteUpdateCallback)?.onDownloadFailed()
+                        onFiled(autoCheck, isCanceled = false, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, updateType = updateType)
+                        onCompleted()
+                    }
                 } else {
-                    removeOldApk(mApplicationContext)
+                    mUpdateInfo = updateInfo
+                    mIsAutoCheck = autoCheck
+                    mHaveNewVersion = true
+                    mAutoInstall = autoInstall
+                    mIsChecked = true
+                    //如果这个条件满足说明上一次没有安装。有因为即使上一次没有安装最新的版本也有可能超出了上一次下载的版本，所以要在这里判断。
+                    val apkPath = getApkPathFromSp(mApplicationContext)
+                    if (getApkVersionCodeFromSp(mApplicationContext) == updateInfo.versionCode && getApkPathFromSp(mApplicationContext).endsWith(".apk", true) && File(apkPath).exists()) {
+                        mIsLoaded = true
+                    } else {
+                        removeOldApk(mApplicationContext)
+                    }
+                    onShowUpdateInformDialog()
                 }
-                onShowUpdateInformDialog()
             }
+            true
+        } else {
+            false
         }
     }
 
     private fun onShowUpdateInformDialog() {
-        ActivityStackManager.stackTopActivity?.also { activity ->
+        ActivityStackManager.watchStackTopActivity(true) { activity ->
             requireUpdateInfo.also {
                 dialog.show(activity, it.versionName, it.updateMessageTitle, it.updateMessage, updateType, mIsAutoCheck)
             }
+            true
         }
     }
 
@@ -225,6 +250,7 @@ class ApkUpdater private constructor(
             (this as? CompleteUpdateCallback)?.onDownloadCancelled()
             onFiled(mIsAutoCheck, true, mHaveNewVersion, localVersionName, 0, updateType)
             onCompleted()
+            mUpdateInfo = null
         }
     }
 
@@ -237,7 +263,7 @@ class ApkUpdater private constructor(
         if (isContinue) {
             val apkFile = File(getApkPathFromSp(mApplicationContext))
             if (mIsLoaded && checkFileSignature(apkFile)) {
-                dialog.dismiss()
+                enabledDialog?.dismiss()
                 handlerDownloadSuccess(apkFile)
             } else {
                 if (apkFile.exists()) {
@@ -245,13 +271,17 @@ class ApkUpdater private constructor(
                 }
                 if (checkCanDownloadable()) {
                     startDownload()
+                } else {
+                    onTipNetworkError()
                 }
+                NetWorkStateUtil.addNetworkStateChangedListener(connectChangedListener)
             }
         } else {
             mCallback?.apply {
                 (this as? CompleteUpdateCallback)?.onDownloadCancelled()
                 onFiled(mIsAutoCheck, true, mHaveNewVersion, localVersionName, 0, updateType)
                 onCompleted()
+                mUpdateInfo = null
             }
         }
     }
@@ -259,20 +289,22 @@ class ApkUpdater private constructor(
     private fun handlerDownloadSuccess(apkFile: File) {
         if (mAutoInstall) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                ActivityStackManager.stackTopActivity?.also {
+                ActivityStackManager.watchStackTopActivity(true) {
                     OkPermission.with(it)
-                            .addDefaultPermissions(Manifest.permission.REQUEST_INSTALL_PACKAGES)
-                            .checkAndApply { granted, _ ->
-                                if (granted) {
-                                    onInstallApk(apkFile)
-                                } else {
-                                    mCallback?.apply {
-                                        (this as? CompleteUpdateCallback)?.onDownloadSuccess(apkFile, true)
-                                        onFiled(mIsAutoCheck, isCanceled = true, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, updateType = updateType)
-                                        onCompleted()
-                                    }
+                        .addDefaultPermissions(Manifest.permission.REQUEST_INSTALL_PACKAGES)
+                        .checkAndApply { granted, _ ->
+                            if (granted) {
+                                onInstallApk(apkFile)
+                            } else {
+                                mCallback?.apply {
+                                    (this as? CompleteUpdateCallback)?.onDownloadSuccess(apkFile, true)
+                                    onFiled(mIsAutoCheck, isCanceled = true, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, updateType = updateType)
+                                    onCompleted()
+                                    mUpdateInfo = null
                                 }
                             }
+                        }
+                    true
                 }
             } else {
                 onInstallApk(apkFile)
@@ -282,6 +314,7 @@ class ApkUpdater private constructor(
                 (this as? CompleteUpdateCallback)?.onDownloadSuccess(apkFile, true)
                 onSuccess(mIsAutoCheck, true, localVersionName, updateType)
                 onCompleted()
+                mUpdateInfo = null
             }
         }
     }
@@ -293,13 +326,13 @@ class ApkUpdater private constructor(
                 (this as? CompleteUpdateCallback)?.onInstallFailed()
                 onFiled(mIsAutoCheck, isCanceled = false, haveNewVersion = true, curVersionName = localVersionName, checkMD5failedCount = 0, updateType = updateType)
                 onCompleted()
+                mUpdateInfo = null
             }
         } //如果installApk为true则不需要回调了，因为安装成功必定会杀死进程。杀掉进程后回调已经没有意义了。
     }
 
     private fun checkCanDownloadable(): Boolean {
-        registerNetWorkReceiver() //注册一个网络状态改变的广播接收者。无论网络是否连接成功都要注册，因为下载过程中可能会断网。
-        return NetWorkStateUtil.isConnected(mApplicationContext)
+        return NetWorkStateUtil.isNetworkAvailable
     }
 
     /**
@@ -308,19 +341,28 @@ class ApkUpdater private constructor(
      * @param updateInfo        更新信息对象。
      * @param autoInstall       是否自动安装，true表示在下载完成后自动安装，false表示不需要安装。
      */
-    fun download(updateInfo: UpdateInfo, autoInstall: Boolean = true) {
-        check(!mIsChecked) {
-            //如果检查更新不是自己检查的就不能调用这个方法。
-            "Because you update the action is completed, so you can't call this method."
-        }
-        require(!(!autoInstall && mCallback == null)) { "Because you have neither set up to monitor installed automatically, so the download is pointless." }
-        if (TextUtils.isEmpty(updateInfo.downLoadsUrl)) {
-            return
-        }
-        mAutoInstall = autoInstall
-        mUpdateInfo = updateInfo
-        if (checkCanDownloadable()) {
-            startDownload()
+    fun download(updateInfo: UpdateInfo, autoInstall: Boolean = true): Boolean {
+        return if (mUpdateInfo == null) {
+            check(!mIsChecked) {
+                //如果检查更新不是自己检查的就不能调用这个方法。
+                "Because you update the action is completed, so you can't call this method."
+            }
+            require(!(!autoInstall && mCallback == null)) { "Because you have neither set up to monitor installed automatically, so the download is pointless." }
+            if (!updateInfo.downLoadsUrl.isNullOrBlank()) {
+                mAutoInstall = autoInstall
+                mUpdateInfo = updateInfo
+                if (checkCanDownloadable()) {
+                    startDownload()
+                } else {
+                    onTipNetworkError()
+                }
+                NetWorkStateUtil.addNetworkStateChangedListener(connectChangedListener)
+                true
+            } else {
+                false
+            }
+        } else {
+            false
         }
     }
 
@@ -328,7 +370,7 @@ class ApkUpdater private constructor(
      * 开始下载。
      */
     private fun startDownload() {
-        if (!isBindService) {
+        if (!isBindService && mUpdateInfo != null) {
             mServiceIntent = DownloadService.obtainIntent(mApplicationContext, requireUpdateInfo.downLoadsUrl!!, updateType, defaultApkName).also {
                 mApplicationContext.startService(it)
                 isBindService = mApplicationContext.bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
@@ -386,41 +428,11 @@ class ApkUpdater private constructor(
          */
         fun create(): ApkUpdater {
             return ApkUpdater(
-                    customDialogGenerator,
-                    callback
+                customDialogGenerator,
+                callback
             )
         }
 
-    }
-
-    private inner class NetWorkStateChangedReceiver : ConnectivityChangeReceiver() {
-        /**
-         * 当链接断开的时候执行。
-         *
-         * @param type 表示当前断开链接的类型，是WiFi还是流量。如果为 [ConnectivityManager.TYPE_WIFI] 则说明当前断开链接
-         * 的是WiFi，如果为 [ConnectivityManager.TYPE_MOBILE] 则说明当前断开链接的是流量。
-         */
-        override fun onDisconnected(type: Int) {
-            dialog.onNetworkError()
-        }
-
-        /**
-         * 当链接成功后执行。
-         *
-         * @param type 表示当前链接的类型，是WiFi还是流量。如果为 [ConnectivityManager.TYPE_WIFI] 则说明当前链接
-         * 成功的是WiFi，如果为 [ConnectivityManager.TYPE_MOBILE] 则说明当前链接成功的是流量。
-         */
-        override fun onConnected(type: Int) {
-            when (type) {
-                ConnectivityManager.TYPE_MOBILE -> if (!isBindService) {
-                    startDownload()
-                }
-
-                ConnectivityManager.TYPE_WIFI -> if (!isBindService) {
-                    startDownload()
-                }
-            }
-        }
     }
 
     /**
@@ -455,27 +467,27 @@ class ApkUpdater private constructor(
             }
             (mCallback as? CompleteUpdateCallback)?.onProgress(total, current, percentage)
             //因为回调有延迟，所以这里判断一下是否有网络，如果没有网络就不在更新进度，否则明明已经提示用户没有网了，但是进度还会更新，有点诡异。
-            if (NetWorkStateUtil.isConnected(mApplicationContext)) {
-                dialog.onProgress(total, current, percentage)
+            if (NetWorkStateUtil.isNetworkAvailable) {
+                enabledDialog?.onProgress(total, current, percentage)
             }
         }
 
         override fun onLoadSuccess(apkFile: File, isCache: Boolean) {
-            dialog.dismiss()
+            enabledDialog?.dismiss()
             ActivityStackManager.stackTopActivity?.also { activity ->
                 if (!checkFileSignature(apkFile)) {
                     removeOldApk(mApplicationContext)
                     downloadFailedCountPlus(mApplicationContext)
                     AlertDialog.Builder(activity)
-                            .setCancelable(false)
-                            .setTitle("提示：")
-                            .setMessage("下载失败，请尝试切换您的网络环境后再试~")
-                            .setNegativeButton("确定") { _, _ ->
-                                mOnProgressListener.onLoadFailed()
-                            }.create().show()
+                        .setCancelable(false)
+                        .setTitle(activity.getString(R.string.kelin_apk_updater_warn))
+                        .setMessage(activity.getString(R.string.kelin_apk_updater_download_failed_tip))
+                        .setNegativeButton(activity.getString(R.string.kelin_apk_updater_i_known)) { _, _ ->
+                            mOnProgressListener.onLoadFailed()
+                        }.create().show()
                 } else {
                     clearDownloadFailedCount(mApplicationContext)
-                    unregisterNetWorkReceiver()
+                    NetWorkStateUtil.removeNetworkStateChangedListener(connectChangedListener)
                     stopService() //结束服务
                     handlerDownloadSuccess(apkFile)
                 }
@@ -483,13 +495,14 @@ class ApkUpdater private constructor(
         }
 
         override fun onLoadFailed() {
-            unregisterNetWorkReceiver()
+            NetWorkStateUtil.removeNetworkStateChangedListener(connectChangedListener)
             stopService() //结束服务
-            dialog.dismiss()
+            enabledDialog?.dismiss()
             mCallback?.apply {
                 (this as? CompleteUpdateCallback)?.onDownloadFailed()
                 onFiled(mIsAutoCheck, false, mHaveNewVersion, localVersionName, getDownloadFailedCount(mApplicationContext), updateType)
                 onCompleted()
+                mUpdateInfo = null
             }
         }
 

@@ -14,6 +14,12 @@ import com.kelin.apkUpdater.UpdateType
  * **版本:** v 1.0.0
  */
 interface ApkUpdateDialog {
+
+    /**
+     * 判断当前弹窗是否已经被销毁。
+     */
+    val isDismissed: Boolean
+
     /**
      * 当需要显示检查更新提示对话框的时候调用。你需要在这里进行检查更新提示对话框的显示。
      * 在用户做出相应的操作后，你应当调用[ApkUpdater.setCheckHandlerResult]方法进行下一步的操作。
@@ -26,7 +32,7 @@ interface ApkUpdateDialog {
      * @param isAutoCheck 是否是自动更新。
      * @see ApkUpdater.setCheckHandlerResult
      */
-    fun show(activity: Activity, version: String?, updateTitle: CharSequence?, updateContent: CharSequence?, updateType: UpdateType, isAutoCheck:Boolean)
+    fun show(activity: Activity, version: String?, updateTitle: CharSequence?, updateContent: CharSequence?, updateType: UpdateType, isAutoCheck: Boolean)
 
 
     /**

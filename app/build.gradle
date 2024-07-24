@@ -1,16 +1,15 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
+
 
 android {
-    compileSdkVersion Integer.parseInt(ANDROID_COMPILE_SDK_VERSION)
-    buildToolsVersion ANDROID_BUILD_TOOLS_VERSION
+    compileSdk 33
     defaultConfig {
         applicationId 'com.kelin.apkupdater'
-        minSdkVersion ANDROID_BUILD_MIN_SDK_VERSION
-        targetSdkVersion ANDROID_BUILD_TARGET_SDK_VERSION
-        versionCode Integer.parseInt(ANDROID_VERSION_CODE)
-        versionName ANDROID_VERSION_NAME
+        minSdkVersion 23
+        targetSdkVersion 33
+        versionCode 320
+        versionName "3.2.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -19,6 +18,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    buildFeatures {
+        viewBinding true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    namespace 'com.kelin.updatemanagerdemo'
 }
 
 dependencies {
@@ -27,11 +36,8 @@ dependencies {
     androidTestImplementation('androidx.test.espresso:espresso-core:3.1.0', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    testImplementation 'junit:junit:4.12'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    testImplementation 'junit:junit:4.13.2'
     implementation project(':apkupdater')
-
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.5.4'
-    releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'
     // Optional, if you use support library fragments:
 }

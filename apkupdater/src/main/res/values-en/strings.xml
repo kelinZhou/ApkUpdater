@@ -1,0 +1,13 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="kelin_apk_updater_warn">Warn：</string>
+    <string name="kelin_apk_updater_update_dialog_label">New version</string>
+    <string name="kelin_apk_updater_skip_this_version">Skip this version</string>
+    <string name="kelin_apk_updater_network_error_tip">Download suspended wait recovery</string>
+    <string name="kelin_apk_updater_download_failed_tip">Download failed, please try switching your network environment and try again</string>
+    <string name="kelin_apk_updater_i_known">OK</string>
+    <string name="kelin_apk_updater_update_now">Upgrade now</string>
+    <string name="kelin_apk_updater_update_in_background">Background upgrade</string>
+    <string name="kelin_apk_updater_update_in_background_tip">Downloading in background Please wait</string>
+    <string name="kelin_apk_updater_downloading">Downloading</string>
+    <string name="kelin_apk_updater_network_error_waiting" tools:ignore="TypographyEllipsis">Network disconnected waiting...</string>
+</resources>

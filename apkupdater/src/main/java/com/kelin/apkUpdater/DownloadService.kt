@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.*
 import android.provider.MediaStore
 import android.text.TextUtils
+import android.util.Log
 import com.kelin.apkUpdater.UpdateHelper.getAppName
 import com.kelin.apkUpdater.UpdateHelper.putApkPath2Sp
 import com.kelin.apkUpdater.callback.DownloadProgressCallback
@@ -34,18 +35,22 @@ class DownloadService : Service() {
     private var mCursor: Cursor? = null
     private var mLastStatus = 0
     private var mIsStarted = false
+
     /**
      * 服务被解绑的监听。
      */
     private var serviceUnBindListener: (() -> Unit)? = null
+
     /**
      * 下载进度的监听。
      */
     private var onProgressListener: DownloadProgressCallback? = null
+
     /**
      * 下载完成的广播接收者。
      */
     private val downLoadBroadcast by lazy { DownLoadBroadcast() }
+
     /**
      * 下载管理器。
      */
@@ -56,18 +61,22 @@ class DownloadService : Service() {
             getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         }
     }
+
     /**
      * 下载进度的观察者。
      */
     private val downloadObserver by lazy { DownloadChangeObserver() }
+
     /**
      * 工作线程。
      */
     private val scheduledExecutorService by lazy { Executors.newSingleThreadScheduledExecutor() }
+
     /**
      * 更新进度的任务。
      */
     private val progressRunnable by lazy { Runnable { updateProgress() } }
+
     /**
      * 用于下载过程中在UI线程处理工作线程发送来的消息。
      */
@@ -78,14 +87,18 @@ class DownloadService : Service() {
                 if (onProgressListener != null) {
                     when (msg.what) {
                         WHAT_PROGRESS -> {
-                            val obj = msg.obj as Int
+                            var obj = msg.obj as Int
                             if (obj == DownloadManager.STATUS_RUNNING || mLastStatus != obj) {
                                 mLastStatus = obj
+                                if (obj == 0 && msg.arg1 < 0 && msg.arg2 < 0){
+                                    obj = DownloadManager.STATUS_FAILED //非正常的下载失败，可能是下载任务被删除了。
+                                }
                                 when (obj) {
                                     DownloadManager.STATUS_FAILED -> {
                                         onProgressListener!!.onLoadFailed()
                                         mIsLoadFailed = true
                                     }
+
                                     DownloadManager.STATUS_PAUSED -> onProgressListener!!.onLoadPaused()
                                     DownloadManager.STATUS_PENDING -> onProgressListener!!.onLoadPending()
                                     DownloadManager.STATUS_RUNNING -> {
@@ -103,6 +116,7 @@ class DownloadService : Service() {
                                             }
                                         }
                                     }
+
                                     DownloadManager.STATUS_SUCCESSFUL -> if (msg.arg1 >= 0 && msg.arg2 > 0) {
                                         var fraction = ((msg.arg1 + 0f) / msg.arg2 * 100).toInt()
                                         if (fraction == 0) fraction = 1
@@ -114,6 +128,7 @@ class DownloadService : Service() {
                                 }
                             }
                         }
+
                         WHAT_COMPLETED -> if (!mIsLoadFailed) {
                             val apkFile = msg.obj as? File
                             if (apkFile != null && apkFile.exists()) {
@@ -135,15 +150,20 @@ class DownloadService : Service() {
 
     override fun onBind(intent: Intent): IBinder {
         val downloadUrl = intent.getStringExtra(KEY_DOWNLOAD_URL)
-        updateType = intent.getIntExtra(KEY_IS_FORCE_UPDATE, UpdateType.UPDATE_WEAK.code)
-        mApkName = intent.getStringExtra(KEY_APK_NAME)
-        downloadApk(downloadUrl)
+        if (downloadUrl.isNullOrBlank()) {
+            Message.obtain(downLoadHandler, DownloadManager.STATUS_FAILED).sendToTarget()
+        } else {
+            updateType = intent.getIntExtra(KEY_IS_FORCE_UPDATE, UpdateType.UPDATE_WEAK.code)
+            mApkName = intent.getStringExtra(KEY_APK_NAME)
+            downloadApk(downloadUrl)
+        }
         return DownloadBinder()
     }
 
     /**
      * 下载最新APK
      */
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun downloadApk(url: String) {
         registerContentObserver()
         val request = DownloadManager.Request(Uri.parse(url))
@@ -151,7 +171,11 @@ class DownloadService : Service() {
         request.setTitle(getAppName(applicationContext, "更新")).setNotificationVisibility(visibility).setDestinationInExternalFilesDir(applicationContext, Environment.DIRECTORY_DOWNLOADS, mApkName)
         //将下载请求放入队列， return下载任务的ID
         downloadId = downloadManager.enqueue(request)
-        registerReceiver(downLoadBroadcast, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(downLoadBroadcast, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(downLoadBroadcast, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+        }
     }
 
     /**
@@ -211,7 +235,7 @@ class DownloadService : Service() {
                     //下载文件的总大小
                     bytesAndStatus[1] = getInt(getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
                     //下载状态
-                    bytesAndStatus[2] = getInt(getColumnIndex(DownloadManager.COLUMN_STATUS))
+                    bytesAndStatus[2] = getColumnIndex(DownloadManager.COLUMN_STATUS).takeIf { it >= 0 }?.let { getInt(it) } ?: 0
                 }
             }
             return bytesAndStatus
@@ -264,7 +288,7 @@ class DownloadService : Service() {
     /**
      * 监听下载进度
      */
-    private inner class DownloadChangeObserver internal constructor() : ContentObserver(downLoadHandler) {
+    private inner class DownloadChangeObserver : ContentObserver(downLoadHandler) {
         /**
          * 当所监听的Uri发生改变时，就会回调此方法
          *
@@ -319,18 +343,22 @@ class DownloadService : Service() {
          * 表示当前的消息类型为更新进度。
          */
         const val WHAT_PROGRESS = 0x00000101
+
         /**
          * 表示当前的消息类型为下载完成。
          */
         private const val WHAT_COMPLETED = 0X00000102
+
         /**
          * 用来获取下载地址的键。
          */
         private const val KEY_DOWNLOAD_URL = "download_url"
+
         /**
          * 用来获取是否强制更新的键。
          */
         private const val KEY_IS_FORCE_UPDATE = "key_is_force_update"
+
         /**
          * 用来获取APK名称的键。
          */

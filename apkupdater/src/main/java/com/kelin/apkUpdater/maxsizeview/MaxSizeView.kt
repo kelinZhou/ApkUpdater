@@ -2,7 +2,7 @@ package com.kelin.apkUpdater.maxsizeview
 
 import android.content.res.TypedArray
 import android.view.View
-import com.kelin.apkUpdater.R
+import com.kelin.apkupdater.R
 
 /**
  * **描述: ** 可以限定最大尺寸的控件。

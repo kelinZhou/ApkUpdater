@@ -1,14 +1,16 @@
 package com.kelin.apkUpdater.util
 
-import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.net.ConnectivityManager
-import android.net.NetworkInfo
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.Build
-import androidx.core.net.ConnectivityManagerCompat
+import android.util.Log
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 
 /**
  * 描述 网络状态相关的工具类。
@@ -16,155 +18,125 @@ import androidx.core.net.ConnectivityManagerCompat
  * 创建时间 2017/7/12  上午11:03
  * 版本 v 1.0.0
  */
-class NetWorkStateUtil private constructor() {
+internal object NetWorkStateUtil {
     /**
-     * 网络改变广播。
+     * 是否已被初始化。
      */
-    abstract class ConnectivityChangeReceiver : BroadcastReceiver() {
-        var isRegister = false
+    private var initialized = false
 
-        override fun onReceive(context: Context, intent: Intent) {
-            val networkInfo = intent.extras.getParcelable<NetworkInfo>(ConnectivityManager.EXTRA_NETWORK_INFO)
-            val type: Int
-            type = (networkInfo?.type ?: return)
-            if (ConnectivityManager.CONNECTIVITY_ACTION == intent.action) {
-                if (networkInfo.isConnected) {
-                    if (type == ConnectivityManager.TYPE_WIFI && !sIsWifiConnected) {
-                        sIsWifiConnected = true
-                        onConnected(ConnectivityManager.TYPE_WIFI)
-                    } else if (type == ConnectivityManager.TYPE_MOBILE) {
-                        sIsWifiConnected = false
-                        onConnected(ConnectivityManager.TYPE_MOBILE)
-                    }
-                } else {
-                    sIsWifiConnected = false
-                    if (!isConnected(context)) {
-                        onDisconnected(type)
+    private val networkChangedListeners by lazy { ArrayList<NetworkStateChangedListener>() }
+    private val lifecycleNetworkChangedListeners by lazy { ArrayList<NetworkStateChangedListenerWrapper>() }
+
+    /**
+     * 判断网络是否可用。
+     */
+    var isNetworkAvailable = true
+        private set
+        get() = field && isNotVpn  //开启vpn检测后isNotVpn字段才可能为false，所以这里直接加上isNotVpn的校验(不开启vpn检测时isNotVpn永远为true)。
+
+    /**
+     * 判断是否开启了VPN。
+     */
+    var isNotVpn = true
+
+    /**
+     * 初始化。
+     * @param context 应用上下文。
+     * @param vpnCheck 是否开启VPN检测，只有开启VPN检测后isNotVpn才可能为false，同时isNetworkAvailable的判断逻辑才会加入vpn的校验。
+     */
+    fun init(context: Context, vpnCheck: Boolean) {
+        if (!initialized) {
+            initialized = true
+            ContextCompat.getSystemService(context, ConnectivityManager::class.java).also { service ->
+                if (service != null) {
+                    isNetworkAvailable = service.getNetworkCapabilities(service.activeNetwork)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        service.registerDefaultNetworkCallback(NetworkCallbackImpl(vpnCheck))
+                    } else {
+                        service.registerNetworkCallback(
+                            NetworkRequest.Builder()
+                                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                                .build(),
+                            NetworkCallbackImpl(vpnCheck)
+                        )
                     }
                 }
             }
-        }
-
-        /**
-         * 当链接断开的时候执行。如果该方法被执行就说明当前已经没有任何可以使用网络了。
-         *
-         * @param type 表示当前断开链接的类型，是WiFi还是流量。如果为 [ConnectivityManager.TYPE_WIFI] 则说明当前断开链接
-         * 的是WiFi，如果为 [ConnectivityManager.TYPE_MOBILE] 则说明当前断开链接的是流量。
-         */
-        protected abstract fun onDisconnected(type: Int)
-
-        /**
-         * 当链接成功后执行。
-         *
-         * @param type 表示当前链接的类型，是WiFi还是流量。如果为 [ConnectivityManager.TYPE_WIFI] 则说明当前链接
-         * 成功的是WiFi，如果为 [ConnectivityManager.TYPE_MOBILE] 则说明当前链接成功的是流量。
-         */
-        protected abstract fun onConnected(type: Int)
-
-        companion object {
-            val FILTER = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
+        } else {
+            Log.w("ApkUpdater", "NetWorkStateUtil: The Networks is initialized!!!")
         }
     }
 
-    companion object {
-        private var sIsWifiConnected = false
-        /**
-         * 检查当前WIFI是否连接，两层意思——是否连接，连接是不是WIFI
-         *
-         * @param context 上下文。
-         * @return true 表示当前网络处于连接状态，且是WIFI，否则返回false。
-         */
-        @SuppressLint("MissingPermission")
-        fun isWifiConnected(context: Context): Boolean {
-            val info = getConnectivityManager(context).activeNetworkInfo
-            return info != null && info.isConnected && ConnectivityManager.TYPE_WIFI == info.type
-        }
+    /**
+     * 注册网络状态改变的监听，通过该方法注册的监听无需反注册，监听的声明周期会自动绑定到目标生命周期组件上。
+     * @param owner 需要绑定的生命周期组件。
+     * @param l 监听。
+     */
+    fun registerNetworkStateChangedListener(owner: LifecycleOwner, l: NetworkStateChangedListener) {
+        owner.lifecycle.addObserver(NetworkStateChangedListenerWrapper(l).also {
+            lifecycleNetworkChangedListeners.add(it)
+        })
+    }
 
-        /**
-         * 检查当前GPRS是否连接，两层意思——是否连接，连接是不是GPRS
-         *
-         * @param context 上下文。
-         * @return true 表示当前网络处于连接状态，且是GPRS，否则返回false。
-         */
-        @SuppressLint("MissingPermission")
-        fun isGprsConnected(context: Context): Boolean {
-            val info = getConnectivityManager(context).activeNetworkInfo
-            return info != null && info.isConnected && ConnectivityManager.TYPE_MOBILE == info.type
-        }
+    /**
+     * 添加一个网络改变的监听，需要在合适的时机移除改监听，如果不想手动移除则需要通过registerNetworkStateChangedListener方法注册监听与声明周期组件进行绑定。
+     */
+    fun addNetworkStateChangedListener(l: NetworkStateChangedListener) {
+        networkChangedListeners.add(l)
+    }
 
-        /**
-         * 检查当前是否连接。
-         *
-         * @param context 上下文。
-         * @return true 表示当前网络处于连接状态，否则返回false。
-         */
-        @SuppressLint("MissingPermission")
-        fun isConnected(context: Context): Boolean {
-            val info = getConnectivityManager(context).activeNetworkInfo
-            return info != null && info.isConnected
-        }
+    /**
+     * 移除一个通过addNetworkStateChangedListener方法添加的监听。
+     */
+    fun removeNetworkStateChangedListener(l: NetworkStateChangedListener) {
+        networkChangedListeners.remove(l)
+    }
 
-        /**
-         * 对大数据传输时，需要调用该方法做出判断，如果流量敏感，应该提示用户。
-         *
-         * @param context 上下文。
-         * @return true表示流量敏感，false表示不敏感。
-         */
-        fun isActiveNetworkMetered(context: Context): Boolean {
-            return ConnectivityManagerCompat.isActiveNetworkMetered(getConnectivityManager(context))
-        }
-
-        /**
-         * 移动流量开关是否被打开。
-         *
-         * @param context 上下文。
-         * @return 返回true表示流量是开启的，false表示是关闭的。注意开启并不代表当前的网络连接就是移动流量，只是单单开启了开关而已。
-         */
-        @SuppressLint("DiscouragedPrivateApi")
-        fun isMobileEnabled(context: Context): Boolean {
-            try {
-                val getMobileDataEnabledMethod = ConnectivityManager::class.java.getDeclaredMethod("getMobileDataEnabled")
-                getMobileDataEnabledMethod.isAccessible = true
-                return getMobileDataEnabledMethod.invoke(getConnectivityManager(context)) as Boolean
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            // 反射失败，默认开启
-            return true
-        }
-
-        private fun getConnectivityManager(context: Context): ConnectivityManager {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                context.getSystemService(ConnectivityManager::class.java)
-            } else {
-                context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    private class NetworkCallbackImpl(private val vpnCheck: Boolean) : ConnectivityManager.NetworkCallback() {
+        override fun onLost(network: Network) {
+            if (isNetworkAvailable) {  //去重判断，防止重复触发
+                notifyStateChanged(false)
+                Log.w("ApkUpdater", "NetWorkStateUtil: 网络连接已断开")
             }
         }
 
-        /**
-         * 注册网络改变广播。
-         *
-         * @param context  上下文。
-         * @param receiver [ConnectivityChangeReceiver] 广播对象。
-         */
-        fun registerReceiver(context: Context, receiver: ConnectivityChangeReceiver): Intent? {
-            receiver.isRegister = true
-            return context.registerReceiver(receiver, ConnectivityChangeReceiver.FILTER)
-        }
-
-        /**
-         * 反注册网络改变广播。
-         *
-         * @param context  上下文。
-         * @param receiver 已经被注册过的 [ConnectivityChangeReceiver] 广播对象。
-         */
-        fun unregisterReceiver(context: Context, receiver: ConnectivityChangeReceiver) {
-            context.unregisterReceiver(receiver)
-            receiver.isRegister = false
+        override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+            val notVpn = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
+            if (vpnCheck) {
+                isNotVpn = notVpn
+            }
+            if (networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+                if (!isNetworkAvailable) {  //去重判断，防止重复触发
+                    notifyStateChanged(true)
+                    Log.w("ApkUpdater", "NetWorkStateUtil: 网络连接已恢复，VPN开启:${!notVpn}")
+                }
+            }
         }
     }
 
-    init {
-        throw InstantiationError("Utility class don't need to instantiate！")
+    private fun notifyStateChanged(connected: Boolean) {
+        isNetworkAvailable = connected
+        networkChangedListeners.forEach { it(connected) }
+        lifecycleNetworkChangedListeners.forEach { it.onChanged(connected) }
+    }
+
+    private class NetworkStateChangedListenerWrapper(listener: NetworkStateChangedListener) : LifecycleEventObserver {
+
+        private var innerListener: NetworkStateChangedListener? = listener
+
+        fun onChanged(available: Boolean) {
+            innerListener?.invoke(available)
+        }
+
+        override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+            if (event == Lifecycle.Event.ON_DESTROY) {
+                lifecycleNetworkChangedListeners.remove(this)
+                innerListener = null
+                source.lifecycle.removeObserver(this)
+            }
+        }
     }
 }
+
+internal typealias NetworkStateChangedListener = (connected: Boolean) -> Unit

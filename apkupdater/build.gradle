@@ -1,20 +1,13 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
-
-apply plugin: 'com.github.dcendents.android-maven'
-
 group = 'com.github.kelinZhou'
 
 android {
-    compileSdkVersion Integer.parseInt(ANDROID_COMPILE_SDK_VERSION)
-    buildToolsVersion ANDROID_BUILD_TOOLS_VERSION
+    compileSdk 33
 
     defaultConfig {
-        minSdkVersion ANDROID_BUILD_MIN_SDK_VERSION
-        targetSdkVersion ANDROID_BUILD_TARGET_SDK_VERSION
-        versionCode Integer.parseInt(ANDROID_VERSION_CODE)
-        versionName ANDROID_VERSION_NAME
+        minSdkVersion 23
+        targetSdkVersion 33
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -25,6 +18,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    namespace 'com.kelin.apkupdater'
 }
 
 dependencies {
@@ -43,28 +43,4 @@ dependencies {
 // 指定编码
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
-}
-
-// 打包源码
-task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
-}
-
-task javadoc(type: Javadoc) {
-    failOnError  false
-    source = android.sourceSets.main.java.sourceFiles
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    classpath += configurations.compile
-}
-
-// 制作文档(Javadoc)
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.getDestinationDir()
-}
-
-artifacts {
-    archives sourcesJar
-    archives javadocJar
 }

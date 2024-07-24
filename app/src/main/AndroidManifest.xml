@@ -40,7 +40,8 @@
         <!--版本更新服务-->
         <service android:name="com.kelin.apkUpdater.DownloadService" />
 
-        <activity android:name="com.kelin.updatemanagerdemo.MainActivity">
+        <activity android:name="com.kelin.updatemanagerdemo.MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
